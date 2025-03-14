@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "290388008770",
+    "project_id": "abigold-3f5c6",
+    "storage_bucket": "abigold-3f5c6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:290388008770:android:4000bf89d176101f4c72db",
+        "android_client_info": {
+          "package_name": "com.abigold"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "290388008770-v71ttrrbc3t17imprv9ov5uff6h1m279.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.abigold",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "290388008770-1151p3htr6rah2dnhncp308544in90ck.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNzcx7FMaV1hVeuhZjqa8TDp6JV9ZyJXQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "290388008770-1151p3htr6rah2dnhncp308544in90ck.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "290388008770-3q8h60sjjtoochhg34jk3kk3mlmica51.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.abigold"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:290388008770:android:fc339ddddf56e3ac4c72db",
+        "android_client_info": {
+          "package_name": "com.example.abigold"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "290388008770-1151p3htr6rah2dnhncp308544in90ck.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNzcx7FMaV1hVeuhZjqa8TDp6JV9ZyJXQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "290388008770-1151p3htr6rah2dnhncp308544in90ck.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "290388008770-3q8h60sjjtoochhg34jk3kk3mlmica51.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.abigold"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
