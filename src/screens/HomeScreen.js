@@ -189,61 +189,81 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={[styles.textTitle, { color: '#fff' }]}>
                     Selamat datang di ABI
                 </Text>
-                <View style={{ margin: 15 }} />
-                {user.isAgent &&
-                    <View style={styles.barTopup}>
-                        <View style={{ width: 50, height: 50, alignItems: 'center', justifyContent: 'center' }}>
-                            <Image
-                                source={require('../asset/wallet.png')}  // Local image
-                                style={{ width: 30, height: 30 }}
-                            />
-                        </View>
-                        <View style={{ width: 150, height: 50, justifyContent: 'center' }}>
-                            <Text style={styles.textDesc}>Komisi Kamu</Text>
-                            <TouchableOpacity>
-                                <Text style={styles.textDesc}>Rp {komisi.toLocaleString("id-ID")}</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <TouchableOpacity onPress={() => openWhatsApp()}>
-                            <View style={{ width: 50, height: 50, alignItems: 'center', justifyContent: 'center' }}>
-                                <Image
-                                    source={require('../asset/topup.png')}  // Local image
-                                    style={{ width: 20, height: 20, marginBottom: 2, tintColor: '#37AFE1' }}
-                                />
-                                <Text style={styles.textDesc}>Tarik</Text>
-                            </View>
+                <View style={{ margin: 25 }} />
+                <View style={styles.barTopup}>
+                    <View style={{ width: 50, height: 50, alignItems: 'center', justifyContent: 'center' }}>
+                        <Image
+                            source={require('../asset/wallet.png')}  // Local image
+                            style={{ width: 30, height: 30 }}
+                        />
+                    </View>
+                    <View style={{ width: 150, height: 50, justifyContent: 'center' }}>
+                        <Text style={styles.textDesc}>Komisi Kamu</Text>
+                        <TouchableOpacity>
+                            <Text style={styles.textDesc}>Rp {komisi.toLocaleString("id-ID")}</Text>
                         </TouchableOpacity>
                     </View>
-                }
+                    <TouchableOpacity onPress={() => {
+                        if (user.isAgent) {
+                            openWhatsApp()
+                        } else {
+                            Alert.alert(
+                                "Opss",
+                                "Fitur ini hanya untuk mitra abi, ingin menjadi mitra? yuk daftar",
+                                [
+                                    {
+                                        text: "Tidak",
+                                        onPress: () => console.log("User memilih Tidak"),
+                                        style: "cancel"
+                                    },
+                                    {
+                                        text: "Daftar",
+                                        onPress: () => {
+                                            navigation.navigate("Agent")
+                                        }
+                                    }
+                                ]
+                            );
+                        }
+                    }}>
+                        <View style={{ width: 50, height: 50, alignItems: 'center', justifyContent: 'center' }}>
+                            <Image
+                                source={require('../asset/topup.png')}  // Local image
+                                style={{ width: 20, height: 20, marginBottom: 2, tintColor: '#37AFE1' }}
+                            />
+                            <Text style={styles.textDesc}>Tarik</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
                 <View style={{ margin: 15 }} />
-                <ScrollView contentContainerStyle={{ width: 'auto', paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', }} horizontal>
+                <ScrollView contentContainerStyle={{paddingHorizontal: 20, flexDirection: 'row'}} horizontal>
                     {banner.map((item, index) => {
                         return (
-                            <TouchableOpacity key={index}>
+                            <View key={index}>
                                 <Image source={{ uri: item.image }} style={styles.image} />
-                            </TouchableOpacity>
+                            </View>
                         )
                     })}
                 </ScrollView>
-                <View style={{ margin: 5 }} />
-
-                <Text style={[styles.textTitle, { color: '#000000', textAlign: 'center' }]}>
+                <Text style={[styles.textTitle, { color: '#000000', textAlign: 'center', marginBottom: 20, marginTop: 10 }]}>
                     Produk Terbaik Kami
                 </Text>
                 <View style={styles.barItems}>
                     {bannerNews.map((data, index) => {
                         return (
-                            <TouchableOpacity key={index} onPress={() => {
-                                navigation.navigate("Detail", {
-                                    id: data.id,
-                                })
-                            }}>
-                                <View style={styles.contentTopop}>
-                                    <Image source={{ uri: data.image1 }} style={styles.imageBackgrounds} />
-                                    <View style={{ margin: 2 }} />
-                                    <Text style={styles.textDesc}>{data.nama}</Text>
-                                </View>
-                            </TouchableOpacity>
+                            <View style={styles.itemWrapper} key={index}>
+                                <TouchableOpacity onPress={() => {
+                                    navigation.navigate("Detail", {
+                                        id: data.id,
+                                    })
+                                }}>
+                                    <View style={styles.contentTopop}>
+                                        <Image source={{ uri: data.image1 }} style={styles.imageBackgrounds} />
+                                        <View style={{ margin: 2 }} />
+                                        <Text style={styles.textDesc}>{data.nama}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
                         );
                     })}
                 </View>
@@ -275,7 +295,7 @@ const HomeScreen = ({ navigation }) => {
                         </View>
                     </TouchableOpacity>
                 }
-                <View style={{ margin: 20 }} />
+                <View style={{ flex: 1 }} />
 
                 <Text style={[{ color: '#000000', fontFamily: 'Montserrat-normal', textAlign: 'center', width: width - 45 }]}>
                     © Copyright 2025 ABI TEAM
@@ -333,11 +353,16 @@ const styles = StyleSheet.create({
     },
     barItems: {
         width: width - 50,
-        height: 200,
         borderRadius: 20,
         alignItems: 'center',
-        justifyContent: 'space-around',
         flexDirection: 'row',
+        flexWrap: 'wrap', // Membuat item dapat berpindah baris
+        justifyContent: 'space-between',
+    },
+    itemWrapper: {
+        width: '50%', // Membuat dua item per baris, dengan jarak di antara keduanya
+        marginBottom: 40, // Memberikan jarak antar item
+        alignItems: 'center',
     },
     contentTopop: {
         width: 150,

@@ -15,7 +15,17 @@ const AccountScreen = () => {
     try {
       getOrder().then(userData => {
         if (userData) {
-          setorder(userData);
+          const sortedData = userData.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+          const sortedData1 = sortedData.sort((a, b) => {
+            if (a.status === "pending") return -1; // "pending" harus berada di atas
+            if (b.status === "pending") return 1;  // "pending" harus berada di atas
+            if (a.status === "toKurir") return -1; // "pending" harus berada di atas
+            if (b.status === "toKurir") return 1;  // "pending" harus berada di atas
+            if (a.status === "onKurir") return -1; // "pending" harus berada di atas
+            if (b.status === "onKurir") return 1;  // "pending" harus berada di atas
+            return 0;  // Jika keduanya tidak memiliki status "pending", urutkan secara default
+          });
+          setorder(sortedData1);
         } else {
           console.log('No user data found');
         }
@@ -60,6 +70,22 @@ const AccountScreen = () => {
     return () => clearInterval(intervalId);
   }, []);
 
+  const statusText = {
+    pending: "Menunggu Pembayaran",
+    toKurir: "Request Pickup",
+    onKurir: "Dalam Perjalanan",
+    selesai: "Transaksi Selesai",
+    cancel: "Pembatalan Sistem"
+  };
+
+  const statusColorText = {
+    pending: "red",
+    toKurir: "green",
+    onKurir: "green",
+    selesai: "blue",
+    cancel: "red"
+  };
+
   if (order.length === 0) {
     return (
       <View style={styles.containerLoading}>
@@ -92,7 +118,7 @@ const AccountScreen = () => {
           vertical
           showsHorizontalScrollIndicator={false}
           renderItem={({ item, index }) => (
-            <TouchableOpacity style={[{ marginBottom: index === order.length - 1 ? 20 : 0 }, styles.itemCard]}>
+            <View style={[{ marginBottom: index === order.length - 1 ? 20 : 0 }, styles.itemCard]}>
               {item.status !== "pending" &&
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Invoice</Text>
@@ -101,9 +127,7 @@ const AccountScreen = () => {
               }
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Status</Text>
-                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}> {
-                  item.status === "pending" ? "Menunggu Pembayaran" : item.status === "toKurir" ? "Request Pickup" : item.status === "onKurir" ? "Dalam Perjalanan" : item.status === "selesai" ? "Transaksi Selesai" : item.status === "cancel" ? "Pembatalan Sistem" : ""
-                }</Text>
+                <Text style={{ fontWeight:'bold',fontFamily: 'Montserrat-Regular', fontSize: 13, color: statusColorText[item.status] || "black" }}>{statusText[item.status] || ""}</Text>
               </View>
               <View style={{ margin: 5 }}></View>
               {item.status === "pending" &&
@@ -140,7 +164,7 @@ const AccountScreen = () => {
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Total Pembayaran</Text>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Rp {(item.price + item.biayaKurir + item.angkaRandom + item.biayaDonasi).toLocaleString("id-ID")}</Text>
               </View>
-            </TouchableOpacity>
+            </View>
           )}
         />
       </View>

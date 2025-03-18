@@ -97,7 +97,10 @@ const AgentScreen = ({ navigation }) => {
             keyboardType="numeric"
           />
         </View>
-        <Text style={styles.desc}>Catt: dengan menjadi Mitra. Dapatkan cuan Rp 50.000 untuk tiap transaksi per Gram nya</Text>
+        <Text style={styles.desc}>Catatan: Dengan menjadi Mitra, Anda dapat memperoleh komisi sebesar Rp 50.000 untuk setiap transaksi per gramnya.</Text>
+        <Text style={styles.desc2}>Khusus untuk pembelian dinar, juga berlaku kelipatan.</Text>
+
+        
         <TouchableOpacity
           style={styles.buttonConfirm}
           onPress={() => orderItem()}
@@ -123,8 +126,16 @@ const styles = StyleSheet.create({
   },
   desc: {
     padding:20,
+    paddingBottom:0,
     fontSize: 12,
     textAlign: 'justify'
+  },
+  desc2: {
+    padding: 20,
+    paddingTop:0,
+    fontSize: 12,
+    textAlign: 'left',
+    width:width,
   },
   text: {
     fontSize: 18,
