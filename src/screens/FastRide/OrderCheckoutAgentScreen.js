@@ -8,7 +8,7 @@ import firestore from '@react-native-firebase/firestore';
 
 const { width } = Dimensions.get('window');
 
-const OrderCheckOut = ({ route, navigation }) => {
+const OrderCheckAgentOut = ({ route, navigation }) => {
   const { id } = route.params;
   const [user, setUser] = useState(null);
   const [kurir, setKurir] = useState([]);
@@ -84,8 +84,8 @@ const OrderCheckOut = ({ route, navigation }) => {
         updatedAt: new Date(),
         angkaRandom: Math.floor(Math.random() * 900) + 100,
         biayaKurir: selectedCarrier.price,
-        biayaKomisi: 0,
-        biayaDonasi: Number(user.harga),
+        biayaKomisi: Number(donasi - user.harga),
+        biayaDonasi: Number(donasi),
         isPayedKomisi: false,
         isPayedDonasi: false,
         price: user.harga,
@@ -138,7 +138,7 @@ const OrderCheckOut = ({ route, navigation }) => {
         </View>
         <View style={{ padding: 20, width: width }}>
           <InputField
-            label="Nama Lengkap (Sesuai KTP)"
+            label="Nama Lengkap Pembeli (Sesuai KTP)"
             value={namaLengkap}
             onChangeText={setNamaLengkap}
             placeholder="Masukkan Nama Lengkap"
@@ -177,14 +177,21 @@ const OrderCheckOut = ({ route, navigation }) => {
             onChangeText={setkodereferal}
             placeholder="Masukkan Kode"
           />
+          <InputField
+            label="Harga Jual"
+            value={donasi}
+            onChangeText={setdonasi}
+            placeholder="Masukkan Harga Jual"
+            keyboardType="numeric"
+          />
         </View>
 
         {selectedCarrier && (
           <>
             {donasi > 0 && (
               <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
-                <Text style={styles.desc}>Donasi</Text>
-                <Text style={styles.desc}>{formatHarga(donasi)}</Text>
+                <Text style={styles.desc}>Komisi</Text>
+                <Text style={styles.desc}>{formatHarga(donasi - user.harga)}</Text>
               </View>
             )}
             <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
@@ -195,7 +202,7 @@ const OrderCheckOut = ({ route, navigation }) => {
               <Text style={styles.desc}>{formatHarga(user.harga)}</Text>
             </View><View style={{ paddingHorizontal: 20, paddingBottom: 20, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
               <Text style={styles.title}>Total Pembelian</Text>
-              <Text style={styles.title}>{formatHarga(user.harga + selectedCarrier.price + Number(donasi))}</Text>
+              <Text style={styles.title}>{formatHarga(selectedCarrier.price + Number(donasi))}</Text>
             </View><TouchableOpacity
               style={styles.buttonConfirm}
               onPress={() => orderItem()}
@@ -250,4 +257,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default OrderCheckOut;
+export default OrderCheckAgentOut;

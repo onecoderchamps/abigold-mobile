@@ -145,6 +145,32 @@ const getOrder = async () => {
     }
 };
 
+const getMember = async () => {
+    const user = auth().currentUser;
+    
+    if (!user) return []; // Pastikan user sudah login
+
+    try {
+        const snapshot = await firestore()
+            .collection('member')
+            .where('idUser', '==', user.uid)
+            .orderBy('createdAt','asc' ) // Gunakan where() untuk filtering
+            .get();
+
+        if (!snapshot.empty) {
+            return snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+        } else {
+            return [];
+        }
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        return [];
+    }
+};
+
 const getOrderKomisi = async (id) => {
     const user = auth().currentUser;
     if (!user) return []; // Pastikan user sudah login
@@ -182,5 +208,6 @@ export {
     getDetailProduct,
     getKurir,
     getrekening,
-    getOrderKomisi
+    getOrderKomisi,
+    getMember
 }

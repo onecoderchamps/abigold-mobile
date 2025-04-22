@@ -56,7 +56,7 @@ const DetailScreen = ({ route, navigation }) => {
               id: id,
             })}
           >
-            <Text style={styles.textButton}>Pesan Sekarang</Text>
+            <Text style={styles.textButton}>Buat Invoice</Text>
           </TouchableOpacity>
         </View>
         <View style={{ height: 50 }} />

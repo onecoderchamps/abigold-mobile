@@ -9,6 +9,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import DetailScreen from '../screens/FastRide/ChoiceScreen';
 import AgentScreen from '../screens/FastRide/AgentScreen';
 import OrderCheckOutScreen from '../screens/FastRide/OrderCheckoutScreen';
+import OrderCheckAgentOut from '../screens/FastRide/OrderCheckoutAgentScreen';
+import AccountAgentScreen from '../screens/OrderAgenScreen';
+import MemberAgentScreen from '../screens/FastRide/CreaterMemberScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -44,6 +47,20 @@ const HomeStack = () => (
       headerTitleStyle: { fontWeight: 'normal',fontFamily:'Montserrat-Regular' },
       headerShown: true,
     }} />
+    <Stack.Screen name="OrderCheckOutAgentScreen" component={OrderCheckAgentOut} options={{
+      title: 'OrderAgent',
+      headerStyle: { 
+        backgroundColor: '#214937', 
+        elevation: 0, // Menghilangkan shadow di Android
+        shadowOpacity: 0, // Menghilangkan shadow di iOS
+        alignItems: 'center',
+      },
+      headerTitleAlign: 'center',
+      headerTintColor: '#fff',
+      headerShadowVisible: false,
+      headerTitleStyle: { fontWeight: 'normal',fontFamily:'Montserrat-Regular' },
+      headerShown: true,
+    }} />
     <Stack.Screen name="Agent" component={AgentScreen} options={{
       title: 'Mitra ABI',
       headerStyle: { 
@@ -58,7 +75,22 @@ const HomeStack = () => (
       headerTitleStyle: { fontWeight: 'normal',fontFamily:'Montserrat-Regular' },
       headerShown: true,
     }} />
+    <Stack.Screen name="MemberAgent" component={MemberAgentScreen} options={{
+      title: 'Member',
+      headerStyle: { 
+        backgroundColor: '#214937', 
+        elevation: 0, // Menghilangkan shadow di Android
+        shadowOpacity: 0, // Menghilangkan shadow di iOS
+        alignItems: 'center',
+      },
+      headerTitleAlign: 'center',
+      headerTintColor: '#fff',
+      headerShadowVisible: false,
+      headerTitleStyle: { fontWeight: 'normal',fontFamily:'Montserrat-Regular' },
+      headerShown: true,
+    }} />
   </Stack.Navigator>
+  
 );
 
 const MainNavigator = () => (
@@ -107,9 +139,9 @@ const MainNavigator = () => (
         },
       }}
     />
-    {/* <Tab.Screen
-      name="Akun"
-      component={AccountScreen}
+    <Tab.Screen
+      name="Member"
+      component={AccountAgentScreen}
       options={{
         tile: 'Home Page',
         headerShown: false,
@@ -125,7 +157,7 @@ const MainNavigator = () => (
           );
         },
       }}
-    /> */}
+    />
   </Tab.Navigator>
 );
 

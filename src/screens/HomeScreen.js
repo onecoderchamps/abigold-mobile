@@ -22,6 +22,8 @@ import messaging from '@react-native-firebase/messaging';
 import { getBanner, getBannerNews, getOrderKomisi, getUser } from '../api/functions';
 import LottieView from 'lottie-react-native';
 import { auth } from '../config/firebaseConfig';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 const items = [
@@ -65,7 +67,6 @@ const requestPermissions = async () => {
                 PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION, // Lokasi Akurat
                 PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION, // Lokasi Kasar
             ]);
-
             return {
                 notifications: granted[PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS] === PermissionsAndroid.RESULTS.GRANTED,
                 microphone: granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED,
@@ -124,6 +125,17 @@ const HomeScreen = ({ navigation }) => {
         })
     }
 
+    const signOut = async () => {
+        try {
+          // await auth().signOut();
+          await GoogleSignin.signOut();
+          await AsyncStorage.removeItem('uid');
+          Alert.alert('Informasi', 'Kamu belum terdaftar sebagai agent ABI');
+        } catch (error) {
+          Alert.alert('Error', error.message);
+        }
+      };
+
     useEffect(() => {
         requestUserPermission();
         requestPermissions();
@@ -133,6 +145,10 @@ const HomeScreen = ({ navigation }) => {
                 if (userData) {
                     setUser(userData)
                     fetchKomisiData(userData.codeReferal);
+                    if(!userData.isAgent)
+                    {
+                        signOut()
+                    }
                     clearInterval(intervalId);
                 } else {
                     console.log('No user data found');
@@ -182,7 +198,7 @@ const HomeScreen = ({ navigation }) => {
             <StatusBar backgroundColor="#214937" barStyle="light-content" />
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ alignItems: 'center', flexGrow: 1 }}>
                 <View style={styles.backgroundDesign} />
-                <View style={{ margin: 20 }} />
+                <View style={{ margin: 50 }} />
                 <Text style={styles.textHeader}>
                     Hi, {user.fullname}
                 </Text>
@@ -245,7 +261,7 @@ const HomeScreen = ({ navigation }) => {
                         )
                     })}
                 </ScrollView>
-                <Text style={[styles.textTitle, { color: '#000000', textAlign: 'center', marginBottom: 20, marginTop: 10 }]}>
+                <Text style={[styles.textTitle, { color: '#000000', textAlign: 'center', marginBottom: 20}]}>
                     Produk Terbaik Kami
                 </Text>
                 <View style={styles.barItems}>
@@ -268,7 +284,7 @@ const HomeScreen = ({ navigation }) => {
                     })}
                 </View>
                 <View style={{ margin: 10 }} />
-                {user.isAgent &&
+                {/* {user.isAgent &&
                     <TouchableOpacity onPress={() => {
                         Clipboard.setString(user.codeReferal);
                         Alert.alert('Disalin', 'Kode referal disalin ke clipboard');
@@ -281,7 +297,7 @@ const HomeScreen = ({ navigation }) => {
                             </Text>
                         </View>
                     </TouchableOpacity>
-                }
+                } */}
                 {!user.isAgent &&
                     <TouchableOpacity onPress={() => {
                         navigation.navigate("Agent")
@@ -338,7 +354,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         backgroundColor: '#214937',
         width: width,
-        height: 180
+        height: 240
     },
     barTopup: {
         width: width - 50,
@@ -363,6 +379,7 @@ const styles = StyleSheet.create({
         width: '50%', // Membuat dua item per baris, dengan jarak di antara keduanya
         marginBottom: 40, // Memberikan jarak antar item
         alignItems: 'center',
+        justifyContent:'center'
     },
     contentTopop: {
         width: 150,

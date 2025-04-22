@@ -157,12 +157,12 @@ const AccountScreen = () => {
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>{item.kurir}</Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Donasi</Text>
+                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Harga Pembelian</Text>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Rp {item.biayaDonasi.toLocaleString("id-ID")}</Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Total Pembayaran</Text>
-                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Rp {(item.price + item.biayaKurir + item.angkaRandom + item.biayaDonasi).toLocaleString("id-ID")}</Text>
+                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Rp {(item.biayaKurir + item.angkaRandom + item.biayaDonasi).toLocaleString("id-ID")}</Text>
               </View>
             </View>
           )}
@@ -189,6 +189,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     backgroundColor: '#214937',
     width: width,
+    paddingTop:50,
     padding: 20,
     fontFamily: 'Montserrat-Regular'
   },
