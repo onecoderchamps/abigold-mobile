@@ -17,7 +17,7 @@ const getUser = async () => {
     }
 };
 
-const getDetailProduct = async ({id}) => {
+const getDetailProduct = async ({ id }) => {
     try {
         const doc = await firestore().collection('product').doc(id).get();
 
@@ -121,14 +121,14 @@ const getBannerNews = async () => {
 
 const getOrder = async () => {
     const user = auth().currentUser;
-    
+
     if (!user) return []; // Pastikan user sudah login
 
     try {
         const snapshot = await firestore()
             .collection('order')
             .where('idUser', '==', user.uid)
-            .orderBy('createdAt','asc' ) // Gunakan where() untuk filtering
+            .orderBy('createdAt', 'asc') // Gunakan where() untuk filtering
             .get();
 
         if (!snapshot.empty) {
@@ -147,14 +147,15 @@ const getOrder = async () => {
 
 const getMember = async () => {
     const user = auth().currentUser;
-    
+
     if (!user) return []; // Pastikan user sudah login
 
     try {
         const snapshot = await firestore()
             .collection('member')
             .where('idUser', '==', user.uid)
-            .orderBy('createdAt','asc' ) // Gunakan where() untuk filtering
+            .where('isActice', '==', true)
+            .orderBy('createdAt', 'asc') // Gunakan where() untuk filtering
             .get();
 
         if (!snapshot.empty) {
@@ -180,7 +181,7 @@ const getOrderKomisi = async (id) => {
             .collection('komisi')
             .where('idUser', '==', id.uid)
             .where('isPayedKomisi', '==', false)
-            .orderBy('createdAt','asc' ) // Gunakan where() untuk filtering
+            .orderBy('createdAt', 'asc') // Gunakan where() untuk filtering
             .get();
 
         if (!snapshot.empty) {
@@ -197,6 +198,35 @@ const getOrderKomisi = async (id) => {
     }
 };
 
+const deleteOrder = async (id) => {
+    try {
+        await firestore().collection('order').doc(id).delete();
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        return [];
+    }
+};
+
+const deleteKomisi = async (id) => {
+    try {
+        const snapshot = await firestore()
+            .collection('komisi')
+            .where('noInvoice', '==', id)
+            .get();
+
+        const batch = firestore().batch(); // gunakan batch untuk performa & atomic action
+
+        snapshot.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+        console.log(`Semua komisi dengan noInvoice = ${id} berhasil dihapus.`);
+    } catch (error) {
+        console.error("Gagal menghapus komisi:", error);
+    }
+};
+
 
 
 export {
@@ -209,5 +239,7 @@ export {
     getKurir,
     getrekening,
     getOrderKomisi,
-    getMember
+    getMember,
+    deleteOrder,
+    deleteKomisi
 }

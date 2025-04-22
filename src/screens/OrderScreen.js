@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity, Image, Linking } from 'react-native';
-import { getDetailProduct, getDriver, getOrder, getrekening } from '../api/functions';
+import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity, Image, Linking, Alert } from 'react-native';
+import { deleteKomisi, deleteOrder, getDetailProduct, getDriver, getOrder, getrekening } from '../api/functions';
 import LottieView from 'lottie-react-native';
 
 const { width } = Dimensions.get('window');
@@ -108,6 +108,33 @@ const AccountScreen = () => {
     );
   }
 
+  const deleteItem = (id, invoice) => {
+    Alert.alert(
+      'Konfirmasi',
+      'Apakah kamu yakin ingin menghapus item ini?',
+      [
+        {
+          text: 'Batal',
+          style: 'cancel',
+        },
+        {
+          text: 'Hapus',
+          onPress: async () => {
+            try {
+              await deleteOrder(id)
+              await deleteKomisi(invoice)
+              fetchOrderData();
+            } catch (error) {
+              console.error('Gagal menghapus item:', error);
+            }
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Order</Text>
@@ -164,6 +191,13 @@ const AccountScreen = () => {
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Total Pembayaran</Text>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Rp {(item.biayaKurir + item.angkaRandom + item.biayaDonasi).toLocaleString("id-ID")}</Text>
               </View>
+              <View style={{ margin: 5 }}></View>
+              <View style={{ margin: 5 }}></View>
+              {item.status === "pending" &&
+                <TouchableOpacity onPress={()=> deleteItem(item.id, item.noInvoice)} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13, color:'red' }}>Hapus</Text>
+                </TouchableOpacity>
+              }
             </View>
           )}
         />
