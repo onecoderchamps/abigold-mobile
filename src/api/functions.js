@@ -178,7 +178,7 @@ const getOrderKomisi = async (id) => {
     try {
         const snapshot = await firestore()
             .collection('order')
-            .where('codeReferal', '==', id.codereferals)
+            .where('idUser', '==', user.uid)
             .where('isPayedKomisi', '==', false)
             .orderBy('createdAt','asc' ) // Gunakan where() untuk filtering
             .get();

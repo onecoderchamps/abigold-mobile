@@ -13,7 +13,7 @@ const RadioButtonGroup = ({ options, selectedValue, onSelect }) => {
           <View style={[styles.outerCircle, selectedValue === option.value && styles.selectedOuterCircle]}>
             {selectedValue === option.value && <View style={styles.innerCircle} />}
           </View>
-          <Text style={styles.optionText}>{option.label}</Text>
+          <Text style={styles.optionText}>{option.label === undefined ? option.namaLengkap + " ( "+ option.ponsel +" ) " : option.label}</Text>
         </TouchableOpacity>
       ))}
     </View>

@@ -5,27 +5,13 @@ import LottieView from 'lottie-react-native';
 
 const { width } = Dimensions.get('window');
 
-const AccountAgentScreen = ({navigation}) => {
+const AccountAgentScreen = ({ navigation }) => {
 
   const [order, setorder] = useState([]);
   const [rekening, setrekening] = useState(null);
 
 
-  const fetchOrderData = async () => {
-    try {
-      getMember().then(userData => {
-        if (userData) {
-          const sortedData = userData.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-          setorder(sortedData);
-        } else {
-          console.log('No user data found');
-        }
-      })
 
-    } catch (error) {
-      console.error("Error fetching order data:", error);
-    }
-  };
 
   const openWhatsApp = () => {
     navigation.navigate("MemberAgent")
@@ -34,7 +20,23 @@ const AccountAgentScreen = ({navigation}) => {
 
 
   useEffect(() => {
-    fetchOrderData();
+    const fetchOrderData = async () => {
+      try {
+        getMember().then(userData => {
+          if (userData) {
+            const sortedData = userData.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+            setorder(sortedData);
+            clearInterval(intervalId);
+          } else {
+            console.log('No user data found');
+          }
+        })
+
+      } catch (error) {
+        console.error("Error fetching order data:", error);
+      }
+    };
+    const intervalId = setInterval(fetchOrderData, 1000);
   }, []);
 
   const statusText = {
@@ -90,15 +92,15 @@ const AccountAgentScreen = ({navigation}) => {
               <View style={{ height: 1, backgroundColor: 'grey', marginVertical: 5 }}></View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Total Penjualan</Text>
-                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>{item.komisi.toLocaleString("id-ID")}</Text>
+                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>{0}</Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Komisi</Text>
-                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>{item.komisi.toLocaleString("id-ID")}</Text>
+                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>{item.komisi.toLocaleString("id-ID")} %</Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Saldo</Text>
-                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>{item.komisi.toLocaleString("id-ID")}</Text>
+                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>{0}</Text>
               </View>
             </View>
           )}

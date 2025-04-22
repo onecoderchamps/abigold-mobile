@@ -15,6 +15,8 @@ const MemberAgentScreen = ({ navigation }) => {
   const [alamat, setalamat] = useState('');
   const [kodereferal, setkodereferal] = useState('');
   const [ponsel, setponsel] = useState('');
+  const [komisi, setkomisi] = useState('');
+
   const [loading, setloading] = useState(false);
 
   const fetchUserData = async () => {
@@ -41,7 +43,7 @@ const MemberAgentScreen = ({ navigation }) => {
           ponsel: ponsel,
           createdAt: new Date(),
           updatedAt: new Date(),
-          komisi: 0,
+          komisi: komisi === "" ? "0" : komisi.toString(),
           isActice: true,
         });
         setloading(false);
@@ -63,10 +65,10 @@ const MemberAgentScreen = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar backgroundColor="#214937" barStyle="light-content" />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ alignItems: 'center', flexGrow: 1, paddingBottom: 40 }}>
-        <View style={{ paddingHorizontal: 20,paddingTop:50, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
+        {/* <View style={{ paddingHorizontal: 20,paddingTop:50, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
           <Text style={styles.title}>Update Data untuk mendapatkan Kode Referal dapatkan cuan melimpah</Text>
           <Text style={styles.title}> </Text>
-        </View>
+        </View> */}
         <View style={{ padding: 20 }} />
         <View style={{ padding: 20, width: width }}>
           <InputField
@@ -96,11 +98,16 @@ const MemberAgentScreen = ({ navigation }) => {
             placeholder="Masukkan Nomor Ponsel"
             keyboardType="numeric"
           />
+          <InputField
+            label="Jumlah Komisi"
+            value={komisi}
+            onChangeText={setkomisi}
+            placeholder="Masukkan Komisi ( % )"
+            keyboardType="numeric"
+          />
         </View>
-        <Text style={styles.desc}>Catatan: Dengan menjadi Mitra, Anda dapat memperoleh komisi sebesar Rp 50.000 untuk setiap transaksi per gramnya.</Text>
-        <Text style={styles.desc2}>Khusus untuk pembelian dinar, juga berlaku kelipatan.</Text>
-
-        
+        {/* <Text style={styles.desc}>Catatan: Dengan menjadi Mitra, Anda dapat memperoleh komisi sebesar Rp 50.000 untuk setiap transaksi per gramnya.</Text>
+        <Text style={styles.desc2}>Khusus untuk pembelian dinar, juga berlaku kelipatan.</Text> */}
         <TouchableOpacity
           style={styles.buttonConfirm}
           onPress={() => orderItem()}

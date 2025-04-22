@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, Dimensions, TouchableOpacity, ScrollView, StatusBar, Alert } from 'react-native';
-import { getDetailProduct, getKurir } from '../../api/functions';
+import { getDetailProduct, getKurir, getMember } from '../../api/functions';
 import InputField from '../../component/InputField';
 import RadioButtonGroup from '../../component/RadioButtonGroup';
 import { auth } from '../../config/firebaseConfig';
@@ -20,6 +20,10 @@ const OrderCheckOut = ({ route, navigation }) => {
 
   const [ponsel, setponsel] = useState('');
   const [selectedCarrier, setSelectedCarrier] = useState('');
+  const [selectedMember, setSelectedMember] = useState('');
+
+  const [member, setmember] = useState([]);
+
   const [loading, setloading] = useState(false);
 
 
@@ -53,6 +57,17 @@ const OrderCheckOut = ({ route, navigation }) => {
     })
   }
 
+  const fetchMemberData = async () => {
+    getMember().then(userData => {
+      if (userData) {
+        console.log(userData)
+        setmember(userData)
+      } else {
+        console.log('No user data found');
+      }
+    })
+  }
+
   const generateInvoice = () => {
     const randomPart1 = Math.floor(Math.random() * 9000) + 1000; // 4 digit acak
     const randomPart2 = Math.floor(Math.random() * 9000) + 1000; // 4 digit acak
@@ -64,12 +79,14 @@ const OrderCheckOut = ({ route, navigation }) => {
   const orderItem = async () => {
     setloading(true);
     const users = auth().currentUser;
+    const invoice = generateInvoice();
     try {
       const orderRef = firestore().collection('order').doc();
       await orderRef.set({
         id: orderRef.id,
         idProduct: id,
         idUser: users.uid,
+        idMember: selectedMember.id,
         namaProduct: user.nama + " " + user.berat,
         namaLengkap: namaLengkap,
         nomorKtp: nomorKtp,
@@ -77,21 +94,44 @@ const OrderCheckOut = ({ route, navigation }) => {
         ponsel: ponsel,
         kurir: selectedCarrier.value,
         codeReferal: kodereferal,
-        noInvoice: generateInvoice(),
+        noInvoice: invoice,
         status: 'pending',
         statusKurir: 'pending',
         createdAt: new Date(),
         updatedAt: new Date(),
         angkaRandom: Math.floor(Math.random() * 900) + 100,
         biayaKurir: selectedCarrier.price,
-        biayaKomisi: 0,
-        biayaDonasi: Number(user.harga),
+        biayaKomisi: Math.round((Number(donasi - user.harga) * Number(100 - selectedMember.komisi) / 100) - (Number(selectedMember.komisi) / 100)),
+        biayaKomisiSub: Math.round(Number(donasi - user.harga) * Number(selectedMember.komisi) / 100 - Number(selectedMember.komisi) / 100),
+        biayaDonasi: Number(donasi),
         isPayedKomisi: false,
         isPayedDonasi: false,
         price: user.harga,
         isActice: true,
         isPayed: false,
       });
+      const komisiRef = firestore().collection('komisi').doc();
+      await komisiRef.set({
+        id: komisiRef.id,
+        noInvoice: invoice,
+        idProduct: id,
+        idUser: users.uid,
+        biayaKomisi: Math.round(Number(donasi - user.harga) * Number(100 - selectedMember.komisi) / 100 - Number(selectedMember.komisi) / 100),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isPayedKomisi: false,
+      })
+      const komisi2Ref = firestore().collection('komisi').doc();
+      await komisi2Ref.set({
+        id: komisi2Ref.id,
+        noInvoice: invoice,
+        idProduct: id,
+        idUser: selectedMember.id,
+        biayaKomisi: Math.round(Number(donasi - user.harga) * Number(selectedMember.komisi) / 100 - Number(selectedMember.komisi) / 100),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isPayedKomisi: false,
+      })
       setloading(false);
       navigation.navigate('Home');
       Alert.alert('Pembelian Berhasil', 'Silahkan cek status pembelian di menu Aktifitas Pembelian');
@@ -105,11 +145,16 @@ const OrderCheckOut = ({ route, navigation }) => {
   useState(() => {
     fetchUserData();
     fetchKurirData();
+    fetchMemberData();
   }, []);
 
 
   const handleCarrierSelect = (value) => {
     setSelectedCarrier(value);
+  };
+
+  const handleMemberSelect = (value) => {
+    setSelectedMember(value);
   };
 
   const handleSubmit = () => {
@@ -171,22 +216,38 @@ const OrderCheckOut = ({ route, navigation }) => {
             onSelect={handleCarrierSelect}
           />
           <View style={{ margin: 10 }} />
-          <InputField
+          <Text style={styles.desc}>Penjual</Text>
+          <RadioButtonGroup
+            options={member}
+            selectedValue={selectedMember.value}
+            onSelect={handleMemberSelect}
+          />
+          <View style={{ margin: 10 }} />
+          {/* <InputField
             label="Kode Referal"
             value={kodereferal}
             onChangeText={setkodereferal}
             placeholder="Masukkan Kode"
+          /> */}
+          <InputField
+            label="Harga Jual"
+            value={donasi}
+            onChangeText={setdonasi}
+            placeholder="Masukkan Harga Jual"
+            keyboardType="numeric"
           />
         </View>
 
         {selectedCarrier && (
           <>
-            {donasi > 0 && (
-              <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
-                <Text style={styles.desc}>Donasi</Text>
-                <Text style={styles.desc}>{formatHarga(donasi)}</Text>
-              </View>
-            )}
+            <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
+              <Text style={styles.desc}>Komisi</Text>
+              <Text style={styles.desc}>{formatHarga(Number(donasi - user.harga) * Number(100-selectedMember.komisi) / 100 - Number(selectedMember.komisi) / 100)}</Text>
+            </View>
+            <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
+              <Text style={styles.desc}>Komisi Member</Text>
+              <Text style={styles.desc}>{formatHarga(Number(donasi - user.harga) * Number(selectedMember.komisi) / 100 - Number(selectedMember.komisi) / 100)}</Text>
+            </View>
             <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
               <Text style={styles.desc}>Biaya Pengiriman</Text>
               <Text style={styles.desc}>{formatHarga(selectedCarrier.price)}</Text>
@@ -195,7 +256,7 @@ const OrderCheckOut = ({ route, navigation }) => {
               <Text style={styles.desc}>{formatHarga(user.harga)}</Text>
             </View><View style={{ paddingHorizontal: 20, paddingBottom: 20, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
               <Text style={styles.title}>Total Pembelian</Text>
-              <Text style={styles.title}>{formatHarga(user.harga + selectedCarrier.price + Number(donasi))}</Text>
+              <Text style={styles.title}>{formatHarga(selectedCarrier.price + Number(donasi))}</Text>
             </View><TouchableOpacity
               style={styles.buttonConfirm}
               onPress={() => orderItem()}
