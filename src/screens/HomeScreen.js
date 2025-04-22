@@ -115,7 +115,8 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const fetchKomisiData = async (codereferals) => {
-        getOrderKomisi({ codereferals }).then(userData => {
+        const user = auth().currentUser;
+        getOrderKomisi(user).then(userData => {
             if (userData) {
                 const totalBiaya = userData.reduce((total, current) => total + current.biayaKomisi, 0);
                 setKomisi(totalBiaya)

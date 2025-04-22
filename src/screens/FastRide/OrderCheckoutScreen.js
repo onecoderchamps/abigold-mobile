@@ -5,6 +5,7 @@ import InputField from '../../component/InputField';
 import RadioButtonGroup from '../../component/RadioButtonGroup';
 import { auth } from '../../config/firebaseConfig';
 import firestore from '@react-native-firebase/firestore';
+import RadioButtonPenjualGroup from '../../component/RadioButtonPenjualGroup';
 
 const { width } = Dimensions.get('window');
 
@@ -21,6 +22,8 @@ const OrderCheckOut = ({ route, navigation }) => {
   const [ponsel, setponsel] = useState('');
   const [selectedCarrier, setSelectedCarrier] = useState('');
   const [selectedMember, setSelectedMember] = useState('');
+  const [idUser, setidUser] = useState('');
+
 
   const [member, setmember] = useState([]);
 
@@ -38,6 +41,8 @@ const OrderCheckOut = ({ route, navigation }) => {
   };
 
   const fetchUserData = async () => {
+    const users = auth().currentUser;
+    setidUser(users.uid)
     getDetailProduct({ id }).then(userData => {
       if (userData) {
         setUser(userData)
@@ -58,10 +63,16 @@ const OrderCheckOut = ({ route, navigation }) => {
   }
 
   const fetchMemberData = async () => {
+    const users = auth().currentUser;
     getMember().then(userData => {
       if (userData) {
-        console.log(userData)
-        setmember(userData)
+        const updatedData = [
+        {
+          id: users.uid, namaLengkap: users.displayName, komisi: 100, ponsel: "Owner"
+        },
+        ...userData
+        ];
+        setmember(updatedData)
       } else {
         console.log('No user data found');
       }
@@ -209,6 +220,16 @@ const OrderCheckOut = ({ route, navigation }) => {
             placeholder="Masukkan Nomor Ponsel"
             keyboardType="numeric"
           />
+
+          <InputField
+            label="Harga Jual"
+            value={donasi}
+            onChangeText={setdonasi}
+            placeholder="Masukkan Harga Jual"
+            keyboardType="numeric"
+          />
+          <View style={{ margin: 10 }} />
+
           <Text style={styles.desc}>Jasa Pengiriman</Text>
           <RadioButtonGroup
             options={kurir}
@@ -217,35 +238,24 @@ const OrderCheckOut = ({ route, navigation }) => {
           />
           <View style={{ margin: 10 }} />
           <Text style={styles.desc}>Penjual</Text>
-          <RadioButtonGroup
+          <RadioButtonPenjualGroup
             options={member}
-            selectedValue={selectedMember.value}
+            selectedValue={selectedMember.id}
             onSelect={handleMemberSelect}
           />
           <View style={{ margin: 10 }} />
-          {/* <InputField
-            label="Kode Referal"
-            value={kodereferal}
-            onChangeText={setkodereferal}
-            placeholder="Masukkan Kode"
-          /> */}
-          <InputField
-            label="Harga Jual"
-            value={donasi}
-            onChangeText={setdonasi}
-            placeholder="Masukkan Harga Jual"
-            keyboardType="numeric"
-          />
         </View>
 
-        {selectedCarrier && (
+        {selectedMember && donasi && selectedCarrier && ponsel && alamat && nomorKtp && namaLengkap && (
           <>
+            {selectedMember.id !== idUser &&
+              <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
+                <Text style={styles.desc}>Komisi</Text>
+                <Text style={styles.desc}>{formatHarga(Number(donasi - user.harga) * Number(100 - selectedMember.komisi) / 100 - Number(selectedMember.komisi) / 100)}</Text>
+              </View>
+            }
             <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
-              <Text style={styles.desc}>Komisi</Text>
-              <Text style={styles.desc}>{formatHarga(Number(donasi - user.harga) * Number(100-selectedMember.komisi) / 100 - Number(selectedMember.komisi) / 100)}</Text>
-            </View>
-            <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', width: width }}>
-              <Text style={styles.desc}>Komisi Member</Text>
+              <Text style={styles.desc}>{selectedMember.id !== idUser ? "Komisi Member" : "Komisi"}</Text>
               <Text style={styles.desc}>{formatHarga(Number(donasi - user.harga) * Number(selectedMember.komisi) / 100 - Number(selectedMember.komisi) / 100)}</Text>
             </View>
             <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', width: width }}>

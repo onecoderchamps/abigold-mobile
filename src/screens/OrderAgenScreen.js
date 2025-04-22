@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Dimensions, TouchableOpacity, Image, Linking } from 'react-native';
-import { getDetailProduct, getDriver, getMember, getOrder, getrekening } from '../api/functions';
+import { getDetailProduct, getDriver, getMember, getOrder, getOrderKomisi, getrekening } from '../api/functions';
 import LottieView from 'lottie-react-native';
 
 const { width } = Dimensions.get('window');
@@ -9,6 +9,8 @@ const AccountAgentScreen = ({ navigation }) => {
 
   const [order, setorder] = useState([]);
   const [rekening, setrekening] = useState(null);
+  const [loading, setloading] = useState(false);
+
 
 
 
@@ -18,25 +20,62 @@ const AccountAgentScreen = ({ navigation }) => {
     console.log("il")
   };
 
+  const fetchKomisiData = async (codereferals) => {
+    try {
+      const userData = await getOrderKomisi({ uid: codereferals });
+
+      if (userData && Array.isArray(userData)) {
+        const totalBiaya = userData.reduce((total, current) => total + Number(current.biayaKomisi || 0), 0);
+        return totalBiaya;
+      } else {
+        console.log('No user data found');
+        return 0;
+      }
+    } catch (error) {
+      console.error('Error fetching komisi data:', error);
+      return 0;
+    }
+  };
 
   useEffect(() => {
+    setloading(true)
     const fetchOrderData = async () => {
       try {
-        getMember().then(userData => {
-          if (userData) {
-            const sortedData = userData.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-            setorder(sortedData);
-            clearInterval(intervalId);
-          } else {
-            console.log('No user data found');
-          }
-        })
+        const userData = await getMember(); // Gantilah dengan await, bukan .then
 
+        if (!userData || !Array.isArray(userData)) {
+          console.log('No user data found');
+          return;
+        }
+
+        // Sort berdasarkan tanggal
+        const sortedData = userData.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+        // Ambil komisi dan tambahkan ke tiap data
+        const updatedData = await Promise.all(
+          sortedData.map(async (data) => {
+            const saldo = await fetchKomisiData(data.id);
+            return {
+              ...data,
+              saldo, // tambahkan properti komisi ke data
+            };
+          })
+        );
+
+        setorder(updatedData); // set data lengkap ke state
+
+        // Optional: pastikan intervalId ada di scope atau state
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
+        setloading(false)
       } catch (error) {
         console.error("Error fetching order data:", error);
+        setloading(false)
       }
     };
-    const intervalId = setInterval(fetchOrderData, 1000);
+
+    const intervalId = setInterval(fetchOrderData, 5000);
   }, []);
 
   const statusText = {
@@ -54,6 +93,17 @@ const AccountAgentScreen = ({ navigation }) => {
     selesai: "blue",
     cancel: "red"
   };
+
+  if (loading) {
+    return (
+      <View style={styles.containerLoading}>
+        <Text style={styles.title}>Member</Text>
+        <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: 'white' }}>
+          <Text style={{ fontFamily: 'Montserrat-Regular' }}>Sedang mengambil data</Text>
+        </View>
+      </View>
+    );
+  }
 
   if (order.length === 0) {
     return (
@@ -90,17 +140,17 @@ const AccountAgentScreen = ({ navigation }) => {
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}> {item.ponsel}</Text>
               </View>
               <View style={{ height: 1, backgroundColor: 'grey', marginVertical: 5 }}></View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              {/* <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Total Penjualan</Text>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>{0}</Text>
-              </View>
+              </View> */}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Komisi</Text>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>{item.komisi.toLocaleString("id-ID")} %</Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Saldo</Text>
-                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>{0}</Text>
+                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Rp {item.saldo.toLocaleString("id-ID")}</Text>
               </View>
             </View>
           )}
