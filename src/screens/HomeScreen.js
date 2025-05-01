@@ -365,7 +365,7 @@ const HomeScreen = () => {
                         </View>
 
                         <View style={styles.balanceContainer}>
-                            <Text style={styles.balanceLabel}>Total Balance</Text>
+                            <Text style={styles.balanceLabel}>Total Komisi</Text>
                             <Text style={styles.balanceValue}>Rp {komisi?.toLocaleString() || '0'}</Text>
                         </View>
 
@@ -454,9 +454,9 @@ const HomeScreen = () => {
                                         <TouchableOpacity onPress={() => handleEdit(u)} style={[styles.actionButton, { backgroundColor: '#ffc107' }]}>
                                             <Text style={styles.actionText}>Edit</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity onPress={() => handleDelete(u.id)} style={[styles.actionButton, { backgroundColor: '#dc3545' }]}>
+                                        {/* <TouchableOpacity onPress={() => handleDelete(u.id)} style={[styles.actionButton, { backgroundColor: '#dc3545' }]}>
                                             <Text style={styles.actionText}>Hapus</Text>
-                                        </TouchableOpacity>
+                                        </TouchableOpacity> */}
                                     </View>
                                 </View>
                             ))
