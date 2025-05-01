@@ -356,11 +356,14 @@ const HomeScreen = () => {
                                 <View key={u.id} style={styles.userCard}>
                                     <Text style={styles.userName}>{u.nama} ({u.phone})</Text>
                                     <Text style={styles.userPhone}>{u.address}</Text>
+                                    <Text style={styles.userPhone}>Ongkir Rp {parseInt(u.hargaOngkir).toLocaleString('id')}</Text>
                                     <Text style={styles.userPhone}>Harga Rp {u?.harga?.toLocaleString('id')}</Text>
                                     {u.status === 0 &&
-                                        <><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                        <>
+                                        <Text style={styles.userPhone}>Total Transfer Rp {(parseInt(u.hargaOngkir) + u?.harga).toLocaleString('id')}</Text>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop:10 }}>
                                             <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Rekening</Text>
-                                            <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}> {rekening.nama}</Text>
+                                            <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 12 }}> {rekening.nama}</Text>
                                         </View><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                                                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}> </Text>
                                                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Bank {rekening.bank} {rekening.nomor}</Text>
