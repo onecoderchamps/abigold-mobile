@@ -51,7 +51,8 @@ const HomeScreen = () => {
         name: '',
         roles: '',
         address: '',
-        phone: ''
+        phone: '',
+        komisi: 0,
     });
 
     const [roles, setRoles] = useState([]);
@@ -99,6 +100,7 @@ const HomeScreen = () => {
             .map(doc => ({
                 key: doc.data().key,
                 label: doc.data().key,
+                value: doc.data().value,
             }));
         setRoles(parsedRoles);
     };
@@ -181,8 +183,8 @@ const HomeScreen = () => {
     };
 
     const saveUser = async () => {
-        const { name, roles, address, phone } = newUser;
-        if (!name || !roles || !address || !phone) {
+        const { name, roles, address, phone, komisi } = newUser;
+        if (!name || !roles || !address || !phone || !komisi) {
             return Alert.alert('Validasi Gagal', 'Semua field wajib diisi.');
         }
 
@@ -210,6 +212,7 @@ const HomeScreen = () => {
                 roles,
                 address,
                 phone: formattedPhone,
+                komisi,
                 updatedAt: firestore.FieldValue.serverTimestamp(),
             };
 
@@ -230,7 +233,7 @@ const HomeScreen = () => {
             }
 
             setModalVisible(false);
-            setNewUser({ name: '', roles: '', address: '', phone: '' });
+            setNewUser({ name: '', roles: '', address: '', phone: '', komisi: 0 });
             setEditingUserId(null);
             fetchData();
         } catch (error) {
@@ -277,6 +280,7 @@ const HomeScreen = () => {
             roles: user.roles,
             address: user.address,
             phone: user.phone,
+            komisi: user.komisi,
         });
         setEditingUserId(user.id);
         setModalVisible(true);
@@ -432,7 +436,7 @@ const HomeScreen = () => {
                             <TouchableOpacity
                                 style={styles.fab}
                                 onPress={() => {
-                                    setNewUser({ name: '', roles: '', address: '', phone: '' });
+                                    setNewUser({ name: '', roles: '', address: '', phone: '', komisi: 0 });
                                     setEditingUserId(null);
                                     setModalVisible(true);
                                 }}
@@ -498,7 +502,7 @@ const HomeScreen = () => {
                                 keyExtractor={item => item.key}
                                 renderItem={({ item }) => (
                                     <TouchableOpacity
-                                        onPress={() => setNewUser({ ...newUser, roles: item.key })}
+                                        onPress={() => setNewUser({ ...newUser, roles: item.key, komisi: item.value })}
                                         style={[
                                             styles.roleItem,
                                             newUser.roles === item.key && styles.selectedRole,
