@@ -570,7 +570,7 @@ const HomeScreen = () => {
                         >
                             {loading ? <ActivityIndicator color="#fff" /> : (
                                 <Text style={styles.submitText}>
-                                    {editingUserId ? 'Perbarui' : 'Simpan'}
+                                    {editingUserId ? 'Perbarui' : 'Pesan'}
                                 </Text>
                             )}
                         </TouchableOpacity>
