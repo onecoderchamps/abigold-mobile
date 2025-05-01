@@ -79,7 +79,18 @@ const HomeScreen = () => {
                 }
             });
 
-            setRefUsers(others);
+            const updatedData = await Promise.all(
+                others.map(async (data) => {
+                    const userData = await getOrderKomisi({ uid: data.id });
+                    const totalBiaya = userData.reduce((total, current) => total + Number(current.biayaKomisi || 0), 0);
+                    const saldo = totalBiaya;
+                    return {
+                        ...data,
+                        saldo, // tambahkan properti komisi ke data
+                    };
+                })
+            );
+            setRefUsers(updatedData);
         }
 
         const rolesSnap = await firestore().collection('roles').get();
@@ -437,7 +448,7 @@ const HomeScreen = () => {
                                 <View key={u.id} style={styles.userCard}>
                                     <Text style={styles.userName}>{u.name} ({u.roles})</Text>
                                     <Text style={styles.userPhone}>{u.phone}</Text>
-                                    <Text style={styles.userPhone}>Komisi Rp {u?.balance?.toLocaleString('id')}</Text>
+                                    <Text style={styles.userPhone}>Komisi Rp {u?.saldo?.toLocaleString('id')}</Text>
 
                                     <View style={{ flexDirection: 'row', marginTop: 10 }}>
                                         <TouchableOpacity onPress={() => handleEdit(u)} style={[styles.actionButton, { backgroundColor: '#ffc107' }]}>

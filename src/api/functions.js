@@ -173,9 +173,6 @@ const getMember = async () => {
 };
 
 const getOrderKomisi = async (id) => {
-    const user = auth().currentUser;
-    if (!user) return []; // Pastikan user sudah login
-    console.log(id.uid)
     try {
         const snapshot = await firestore()
             .collection('komisi')
