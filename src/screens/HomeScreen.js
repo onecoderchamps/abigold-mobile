@@ -452,7 +452,8 @@ const HomeScreen = () => {
                                 <View key={u.id} style={styles.userCard}>
                                     <Text style={styles.userName}>{u.name} ({u.roles})</Text>
                                     <Text style={styles.userPhone}>{u.phone}</Text>
-                                    <Text style={styles.userPhone}>Komisi Rp {u?.saldo?.toLocaleString('id')}</Text>
+                                    <Text style={styles.userPhone}>Komisi {u.komisi}%</Text>
+                                    <Text style={styles.userPhone}>Saldo Rp {u?.saldo?.toLocaleString('id')}</Text>
 
                                     <View style={{ flexDirection: 'row', marginTop: 10 }}>
                                         <TouchableOpacity onPress={() => handleEdit(u)} style={[styles.actionButton, { backgroundColor: '#ffc107' }]}>
