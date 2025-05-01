@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getrekening } from '../api/functions';
+import { getOrderKomisi, getrekening } from '../api/functions';
 
 const { width } = Dimensions.get('window');
 
@@ -29,6 +29,8 @@ const HomeScreen = () => {
     const [product, setProduct] = useState([]);
     const [order, setOrder] = useState([]);
     const [rekening, setrekening] = useState(null);
+    const [komisi, setKomisi] = useState(0);
+
 
     const [modalOrderVisible, setModalOrderVisible] = useState(false);
     const [newOrder, setNewOrder] = useState({
@@ -131,11 +133,30 @@ const HomeScreen = () => {
         setOrder(others);
     };
 
+    const fetchKomisiData = async () => {
+        try {
+            const uid = await AsyncStorage.getItem('uid');
+            const userData = await getOrderKomisi({ uid: uid });
+            if (userData && Array.isArray(userData)) {
+                const totalBiaya = userData.reduce((total, current) => total + Number(current.biayaKomisi || 0), 0);
+                setKomisi(totalBiaya);
+                return totalBiaya;
+            } else {
+                console.log('No user data found');
+                return 0;
+            }
+        } catch (error) {
+            console.error('Error fetching komisi data:', error);
+            return 0;
+        }
+    };
+
     useEffect(() => {
         fetchData();
         fetchProduct();
         fetchOrder();
         fetchUserData();
+        fetchKomisiData();
     }, []);
 
     const formatPhone = (number) => {
@@ -334,7 +355,7 @@ const HomeScreen = () => {
 
                         <View style={styles.balanceContainer}>
                             <Text style={styles.balanceLabel}>Total Balance</Text>
-                            <Text style={styles.balanceValue}>Rp {user.balance?.toLocaleString() || '0'}</Text>
+                            <Text style={styles.balanceValue}>Rp {komisi?.toLocaleString() || '0'}</Text>
                         </View>
 
                         <View style={{ marginBottom: 10, justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
@@ -360,11 +381,11 @@ const HomeScreen = () => {
                                     <Text style={styles.userPhone}>Harga Rp {u?.harga?.toLocaleString('id')}</Text>
                                     {u.status === 0 &&
                                         <>
-                                        <Text style={styles.userPhone}>Total Transfer Rp {(parseInt(u.hargaOngkir) + u?.harga).toLocaleString('id')}</Text>
-                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop:10 }}>
-                                            <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Rekening</Text>
-                                            <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 12 }}> {rekening.nama}</Text>
-                                        </View><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                            <Text style={styles.userPhone}>Total Transfer Rp {(parseInt(u.hargaOngkir) + u?.harga).toLocaleString('id')}</Text>
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+                                                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Rekening</Text>
+                                                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 12 }}> {rekening.nama}</Text>
+                                            </View><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                                                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}> </Text>
                                                 <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Bank {rekening.bank} {rekening.nomor}</Text>
                                             </View></>
