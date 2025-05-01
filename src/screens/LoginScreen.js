@@ -1,136 +1,203 @@
 import React, { useState } from 'react';
-import { View, Text, Button, Alert, StyleSheet, Image, Dimensions, StatusBar, TouchableOpacity } from 'react-native';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { auth } from '../config/firebaseConfig';
+import {
+  View, Text, TextInput, Button, Alert,
+  StyleSheet, Image, KeyboardAvoidingView,
+  Platform, TouchableWithoutFeedback, Keyboard,
+  TouchableOpacity
+} from 'react-native';
 import firestore from '@react-native-firebase/firestore';
-import messaging from '@react-native-firebase/messaging';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const { width } = Dimensions.get('window');
-
-GoogleSignin.configure({
-  webClientId: '290388008770-1151p3htr6rah2dnhncp308544in90ck.apps.googleusercontent.com', // Replace with your web client ID from Firebase
-});
-
-const LoginScreen = () => {
+const LoginScreen = ({ navigation }) => {
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
 
-  const generateReferralCode = () => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < 6; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return result;
+  const generateOtp = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
   };
- 
-   const signInWithGoogle = async () => {
-     try {
-       const signInResult = await GoogleSignin.signIn();
-       const idToken = signInResult.data?.idToken;
-       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-       const userCredential = await auth().signInWithCredential(googleCredential);
- 
-       const { uid, displayName, phoneNumber, email } = userCredential.user;
-       // Ambil FCM Token
-       const fcmToken = await messaging().getToken();
- 
-       // Cek apakah pengguna sudah ada di Firestore
-       const userDoc = await firestore().collection('users').doc(uid).get();
- 
-       if (!userDoc.exists) {
-         // Jika user belum ada, buat data baru
-         await firestore().collection('users').doc(uid).set({
-           fullname: displayName || '',
-           phonenumber: phoneNumber || '',
-           balance: 0,
-           point: 0,
-           uid: uid,
-           alamat: '',
-           nomorrekening: '',
-           fcmToken: fcmToken,
-           isAgent: false,
-           imageKtp:'',
-           noNik:'',
-           namaKtp:'',
-           codeReferal: generateReferralCode(),
-         });
-         setUser(userCredential.user);
-         await AsyncStorage.setItem('uid', uid);
- 
-       } else {
-         await firestore().collection('users').doc(uid).update({
-           fcmToken: fcmToken
-         });
-         setUser(userCredential.user);
-         await AsyncStorage.setItem('uid', uid);
-       }
-     } catch (error) {
-      console.log(error);
-       Alert.alert('Error', error.message);
-     }
-   };
+
+  const formatPhoneNumber = (number) => {
+    const cleaned = number.replace(/[^0-9]/g, '');
+    if (cleaned.startsWith('08')) return '+62' + cleaned.slice(1);
+    if (cleaned.startsWith('62')) return '+62' + cleaned.slice(2);
+    if (cleaned.startsWith('8')) return '+62' + cleaned;
+    if (cleaned.startsWith('628')) return '+' + cleaned;
+    if (cleaned.startsWith('+628')) return cleaned;
+    return '+62' + cleaned;
+  };
+
+  const checkPhoneInFirebase = async (formattedPhone) => {
+    const snapshot = await firestore()
+      .collection('users')
+      .where('phone', '==', formattedPhone)
+      .limit(1)
+      .get();
+    return !snapshot.empty;
+  };
+
+  const sendOtp = async () => {
+    if (!phoneNumber.trim()) {
+      Alert.alert("Error", "Nomor ponsel tidak boleh kosong.");
+      return;
+    }
+
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+
+    setLoading(true);
+    try {
+      const exists = await checkPhoneInFirebase(formattedPhone);
+      if (!exists) {
+        Alert.alert("Error", "Nomor ponsel tidak terdaftar.");
+        setLoading(false);
+        return;
+      }
+
+      // Cek apakah akun sudah diaktifkan
+      const userSnapshot = await firestore()
+        .collection('users')
+        .where('phone', '==', formattedPhone)
+        .limit(1)
+        .get();
+
+      if (!userSnapshot.empty) {
+        const userDoc = userSnapshot.docs[0];
+        const userData = userDoc.data();
+        if (userData.isActive === false) {
+          Alert.alert("Akun Belum Diaktivasi", "Akun Anda belum diaktifkan. Silakan hubungi admin.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const otp = generateOtp();
+
+      const response = await fetch('https://app.saungwa.com/api/create-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: formattedPhone,
+          authkey: "Z8hxOuMsQapmnfe3GFkNbmgWMuOLLcVxnU1oO6fufLFKy0bpS4",
+          appkey: "165ba4e8-713c-40e2-92a5-3696ae54d45f",
+          message: `Kode OTP Anda adalah ${otp}`
+        }),
+      });
+
+      const data = await response.text();
+
+      if (response.ok) {
+        const otpRef = firestore().collection('otp');
+        const existing = await otpRef.where('phone', '==', formattedPhone).limit(1).get();
+
+        if (!existing.empty) {
+          // Jika sudah ada, update OTP-nya
+          const docId = existing.docs[0].id;
+          await otpRef.doc(docId).update({
+            otp: otp,
+            createdAt: firestore.FieldValue.serverTimestamp()
+          });
+        } else {
+          // Jika belum ada, buat baru
+          const otpRefs = firestore().collection('users');
+          const existings = await otpRefs.where('phone', '==', formattedPhone).limit(1).get();
+          const docId = existings.docs[0].id;
+          await otpRef.add({
+            uid: docId,
+            phone: formattedPhone,
+            otp: otp,
+            createdAt: firestore.FieldValue.serverTimestamp()
+          });
+        }
+        navigation.navigate('Otp', { phoneNumber: formattedPhone, otp });
+      } else {
+        Alert.alert('Gagal', data || 'Terjadi kesalahan saat mengirim OTP.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Gagal memeriksa data atau mengirim OTP.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <StatusBar backgroundColor="#214937" barStyle="light-content" />
-      <View style={styles.logoContainer}>
-        <Image
-          source={require('../asset/logo.png')} // Ganti dengan path logo Anda
-          style={styles.logo}
-        />
-        {/* <Text style={styles.textDesc2}>Hallo</Text> */}
-      </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity onPress={signInWithGoogle}>
-          <View style={{ borderRadius: 20, width: width - 100, height: 50, justifyContent: 'center', alignItems: 'center', backgroundColor: 'white' }}>
-            <Text style={{ fontFamily: 'Montserrat-Regular', color: '#214937' }}>Lanjutkan Dengan Google</Text>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          <View style={styles.logoContainer}>
+            <Image source={require('../asset/logo.png')} style={styles.logo} resizeMode="contain" />
           </View>
-        </TouchableOpacity>
-      </View>
-    </View>
+
+          <View style={styles.bottomContainer}>
+            <Text style={styles.label}>Masukkan Nomor Ponsel</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Cth 081234567890"
+              keyboardType="phone-pad"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              editable={!loading}
+            />
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonLoading]}
+              onPress={sendOtp}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>
+                {loading ? 'Mengirim...' : 'Konfirmasi'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 20, // Memberi ruang di atas dan bawah layar
-    backgroundColor: '#214937'
-  },
-  textDesc: {
-    textAlign: 'center',
-    fontSize: 20,
-    fontStyle: 'bold',
-    color: 'white',
-    fontFamily: 'Montserrat-Bold'
-  },
-  textDesc2: {
-    textAlign: 'center',
-    fontSize: 16,
-    fontStyle: 'normal',
-    color: 'white',
-    fontFamily: 'Montserrat-Regular',
-    paddingTop: 20
+    backgroundColor: "#214937",
+    justifyContent: 'space-between',
   },
   logoContainer: {
-    flexGrow: 1, // Membuat logo tetap di tengah
+    flex: 1,
     justifyContent: 'center',
-    alignItems: "center"
+    alignItems: 'center',
   },
   logo: {
-    width: width / 3,
-    height: width / 7,
+    height: 120,
+    width: 120,
   },
-  buttonContainer: {
-    width: '100%', // Tombol memenuhi lebar layar
-    paddingHorizontal: 20, // Jarak dari sisi layar
-    marginBottom: 20, // Jarak dari bawah layar
+  bottomContainer: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  label: {
+    marginBottom: 10,
+    fontSize: 16,
+    color: '#fff',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginBottom: 20,
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  button: {
+    backgroundColor: '#F3C623',  // Same background as the header color
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center'
+  },
+  buttonLoading: {
+    backgroundColor: '#777',  // Darken the color when loading
+  },
+  buttonText: {
+    color: 'black',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

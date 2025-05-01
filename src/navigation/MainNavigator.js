@@ -18,7 +18,7 @@ const Stack = createNativeStackNavigator();
 
 const HomeStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Home" component={MainNavigator} />
+    <Stack.Screen name="Home" component={HomeScreen} />
     <Stack.Screen name="Detail" component={DetailScreen} options={{
       title: 'Detail',
       headerStyle: { 
