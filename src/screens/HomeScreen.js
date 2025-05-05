@@ -552,7 +552,7 @@ const HomeScreen = () => {
                             style={styles.input}
                             keyboardType="phone-pad"
                             value={newOrder.nik}
-                            onChangeText={(val) => setNewOrder({ ...newUser, nik: val })}
+                            onChangeText={(val) => setNewOrder({ ...newOrder, nik: val })}
                         />
                         <TextInput
                             placeholder="Alamat"
