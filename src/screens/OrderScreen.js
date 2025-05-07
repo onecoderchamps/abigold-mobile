@@ -42,10 +42,10 @@ const AccountScreen = () => {
 
     const doc = await firestore().collection('users').doc(uid).get();
     if (doc.exists) {
-        const userData = doc.data();
-        setUser(userData);
+      const userData = doc.data();
+      setUser(userData);
     }
-};
+  };
 
   const fetchKurir = async () => {
     const uid = await AsyncStorage.getItem('uid');
@@ -77,23 +77,23 @@ const AccountScreen = () => {
       .collection('order')
       .where('idUser', '==', uid)
       .get();
-  
+
     const userOrders = [];
     snapshot.forEach(doc => {
       userOrders.push({ id: doc.id, ...doc.data() });
     });
-  
+
     // Urutkan secara manual berdasarkan createdAt (terbaru di atas)
     userOrders.sort((a, b) => {
       const timeA = a.createdAt?.toDate?.() ?? new Date(0);
       const timeB = b.createdAt?.toDate?.() ?? new Date(0);
       return timeB - timeA;
     });
-  
+
     setOrder(userOrders);
   };
-  
-  
+
+
 
   const fetchUserData = async () => {
     const data = await getrekening();
@@ -134,7 +134,7 @@ const AccountScreen = () => {
         createdAt: firestore.FieldValue.serverTimestamp(),
       });
       Alert.alert('Sukses', 'Pesanan berhasil dibuat.');
-      setModalOrderVisible(false);user
+      setModalOrderVisible(false); user
       setNewOrder({
         nama: '',
         nik: '',
@@ -235,23 +235,23 @@ const AccountScreen = () => {
             <View key={u.id} style={styles.userCard}>
               <Text style={styles.userName}>{u.nama} ({u.phone})</Text>
               <Text style={styles.userPhone}>{u.address}</Text>
-              <View style={{flexDirection:'row',justifyContent:'space-between',marginTop:10}}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
                 <Text style={styles.userPhone}>Jasa Kurir</Text>
                 <Text style={styles.userPhone}>{u.kurirLabel}</Text>
               </View>
-              <View style={{flexDirection:'row',justifyContent:'space-between'}}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={styles.userPhone}>Ongkir</Text>
                 <Text style={styles.userPhone}>Rp {parseInt(u.hargaOngkir).toLocaleString('id')}</Text>
               </View>
-              <View style={{flexDirection:'row',justifyContent:'space-between'}}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={styles.userPhone}>Asuransi</Text>
                 <Text style={styles.userPhone}>Rp {parseInt(u.asuransi).toLocaleString('id')}</Text>
               </View>
-              <View style={{flexDirection:'row',justifyContent:'space-between'}}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={styles.userPhone}>Harga Produk</Text>
                 <Text style={styles.userPhone}>Rp {parseInt(u.harga / u.jumlah).toLocaleString('id') + " x " + parseInt(u.jumlah).toLocaleString('id')}</Text>
               </View>
-              <View style={{flexDirection:'row',justifyContent:'space-between'}}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={styles.userPhone}>Total Transfer</Text>
                 <Text style={styles.userPhone}>Rp {(parseInt(u.harga + parseInt(u.hargaOngkir) + parseInt(u.asuransi))).toLocaleString('id')}</Text>
               </View>
@@ -270,9 +270,11 @@ const AccountScreen = () => {
               {u.status === 5 && <Text style={styles.userPhone2}>Pesanan Ditolak</Text>}
 
               <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                <TouchableOpacity style={[styles.actionButton, { backgroundColor: 'green' }]} onPress={openWhatsApp}>
-                  <Text style={styles.actionText}>Chat Admin</Text>
-                </TouchableOpacity>
+                {(u.status === 0) && (
+                  <TouchableOpacity style={[styles.actionButton, { backgroundColor: 'green' }]} onPress={openWhatsApp}>
+                    <Text style={styles.actionText}>Chat Admin</Text>
+                  </TouchableOpacity>
+                )}
                 {(u.status === 0 || u.status >= 4) && (
                   <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#dc3545' }]} onPress={() => handleOrderDelete(u.id)}>
                     <Text style={styles.actionText}>Hapus</Text>
@@ -367,20 +369,20 @@ const AccountScreen = () => {
             </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{fontSize: 12, fontWeight: '600'}}>Harga</Text>
-              <Text style={{fontSize: 12, fontWeight: '600'}}>
+              <Text style={{ fontSize: 12, fontWeight: '600' }}>Harga</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600' }}>
                 Rp {(parseInt(newOrder.harga)).toLocaleString('id')}
               </Text>
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{fontSize: 12, fontWeight: '600'}}>Ongkir</Text>
-              <Text style={{fontSize: 12, fontWeight: '600'}}>
+              <Text style={{ fontSize: 12, fontWeight: '600' }}>Ongkir</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600' }}>
                 Rp {(parseInt(newOrder.hargaOngkir)).toLocaleString('id')}
               </Text>
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{fontSize: 12, fontWeight: '600'}}>Asuransi</Text>
-              <Text style={{fontSize: 12, fontWeight: '600'}}>
+              <Text style={{ fontSize: 12, fontWeight: '600' }}>Asuransi</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600' }}>
                 Rp {(parseInt(newOrder.asuransi)).toLocaleString('id')}
               </Text>
             </View>
@@ -547,7 +549,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  
+
 });
 
 
