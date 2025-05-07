@@ -254,14 +254,14 @@ const HomeScreen = () => {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                              to: rekening.ponsel,
+                              to: user.phone,
                               authkey: "Z8hxOuMsQapmnfe3GFkNbmgWMuOLLcVxnU1oO6fufLFKy0bpS4",
                               appkey: "165ba4e8-713c-40e2-92a5-3696ae54d45f",
-                              message: `Hallo admin, pengguna melakukan penarikan dana sebagai ${user.roles} dengan nomor ` + user.phone
+                              message: `Hallo ${user.name}, untuk melakukan penarikan komisi, mohon lampirkan informasi dengan format wd:{nama akun}/{akun bank}/{nomor rekening} contoh wd:user/bca/123456`
                             }),
                           });
                         setloadingwithdraw(false)
-                        Alert.alert("Pemberitahuan","Kami sudah mengirimkan permintaan Withdraw mohon menunggu terimakasih")
+                        Alert.alert("Pemberitahuan","Kami sudah mengirimkan permintaan Withdraw mohon menunggu admin menghubungi anda terimakasih")
                     },
                 },
             ]
