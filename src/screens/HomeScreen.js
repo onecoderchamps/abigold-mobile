@@ -27,6 +27,7 @@ const HomeScreen = () => {
     const [refUsers, setRefUsers] = useState([]);
     const [komisi, setKomisi] = useState(0);
     const [modalVisible, setModalVisible] = useState(false);
+    const [loadingwithdraw, setloadingwithdraw] = useState(false);
     const [productItems, setProductItems] = useState([]);
     const [newUser, setNewUser] = useState({
         name: '',
@@ -38,6 +39,15 @@ const HomeScreen = () => {
     const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [editingUserId, setEditingUserId] = useState(null);
+      const [rekening, setrekening] = useState(null);
+    
+
+    const fetchUserData = async () => {
+        const data = await getrekening();
+        if (data) {
+          setrekening(data);
+        }
+      };
 
     const fetchData = async () => {
         const uid = await AsyncStorage.getItem('uid');
@@ -114,6 +124,7 @@ const HomeScreen = () => {
 
 
     useEffect(() => {
+        fetchUserData();
         fetchData();
         fetchKomisiData();
         fetchProduct();
@@ -238,17 +249,19 @@ const HomeScreen = () => {
                     text: 'Withdraw',
                     style: 'default',
                     onPress: async () => {
+                        setloadingwithdraw(true)
                         await fetch('https://app.saungwa.com/api/create-message', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                              to: '+6281310531713',
+                              to: rekening.ponsel,
                               authkey: "Z8hxOuMsQapmnfe3GFkNbmgWMuOLLcVxnU1oO6fufLFKy0bpS4",
                               appkey: "165ba4e8-713c-40e2-92a5-3696ae54d45f",
-                              message: `Hallo admin, saya sebagai mau withdraw dengan nomor ` + user.phone
+                              message: `Hallo admin, pengguna melakukan penarikan dana sebagai ${user.roles} dengan nomor ` + user.phone
                             }),
                           });
-                        console.log('Penarikan berhasil');
+                        setloadingwithdraw(false)
+                        Alert.alert("Pemberitahuan","Kami sudah mengirimkan permintaan Withdraw mohon menunggu terimakasih")
                     },
                 },
             ]
@@ -276,10 +289,11 @@ const HomeScreen = () => {
 
                             {/* Tambahkan tombol Withdraw */}
                             <TouchableOpacity
+                                disabled={loadingwithdraw}
                                 style={styles.withdrawButton}
                                 onPress={() => handleWithdraw()}
                             >
-                                <Text style={styles.withdrawText}>Withdraw</Text>
+                                <Text style={styles.withdrawText}>{loadingwithdraw ? "Proses" : "Withdraw"}</Text>
                             </TouchableOpacity>
                         </View>
 

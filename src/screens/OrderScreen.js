@@ -161,9 +161,25 @@ const AccountScreen = () => {
 
   const openWhatsApp = () => {
     const phoneNumber = '6287825159746';
-    const message = 'Halo, saya ingin bertanya';
+    const message = 'Halo, saya ingin konfirmasi pembayaran';
     const url = `https://wa.me/${phoneNumber}?text=${message}`;
-    Linking.openURL(url).catch(err => console.error('Tidak dapat membuka WhatsApp', err));
+    Alert.alert(
+      'Perhatian',
+      'Mohon lampirkan bukti pengiriman kepada admin ABI, pastikan bukti pengiriman sudah tersedia',
+      [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Lanjutkan', style: 'destructive',
+          onPress: async () => {
+            try {
+              Linking.openURL(url).catch(err => console.error('Tidak dapat membuka WhatsApp', err));
+            } catch (err) {
+              Alert.alert('Gagal', 'Gagal menghapus pesanan.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleOrderDelete = async (id) => {
