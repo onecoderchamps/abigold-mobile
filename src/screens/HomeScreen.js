@@ -15,7 +15,6 @@ import {
     FlatList,
     Button,
     Alert,
-    Linking,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,27 +25,9 @@ const { width } = Dimensions.get('window');
 const HomeScreen = () => {
     const [user, setUser] = useState(null);
     const [refUsers, setRefUsers] = useState([]);
-    const [product, setProduct] = useState([]);
-    const [order, setOrder] = useState([]);
-    const [rekening, setrekening] = useState(null);
     const [komisi, setKomisi] = useState(0);
-
-
-    const [modalOrderVisible, setModalOrderVisible] = useState(false);
-    const [newOrder, setNewOrder] = useState({
-        harga: 0,
-        hargaOngkir: 0,
-        product: '',
-        status: 0,
-        pembeli: '',
-        nik: '',
-        address: '',
-        kurir: '',
-        phone: '',
-    });
-
-
     const [modalVisible, setModalVisible] = useState(false);
+    const [productItems, setProductItems] = useState([]);
     const [newUser, setNewUser] = useState({
         name: '',
         roles: '',
@@ -54,7 +35,6 @@ const HomeScreen = () => {
         phone: '',
         komisi: 0,
     });
-
     const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [editingUserId, setEditingUserId] = useState(null);
@@ -105,47 +85,6 @@ const HomeScreen = () => {
         setRoles(parsedRoles);
     };
 
-    const fetchUserData = async () => {
-        getrekening().then(userData => {
-            if (userData) {
-                setrekening(userData)
-            } else {
-                console.log('No user data found');
-            }
-        })
-    }
-
-    const fetchProduct = async () => {
-        const uid = await AsyncStorage.getItem('uid');
-        const snapshot = await firestore()
-            .collection('product')
-            .get();
-
-        const others = [];
-        snapshot.forEach(doc => {
-            if (doc.id !== uid) {
-                others.push({ id: doc.id, ...doc.data() });
-            }
-        });
-        setProduct(others);
-    };
-
-    const fetchOrder = async () => {
-        const uid = await AsyncStorage.getItem('uid');
-        const snapshot = await firestore()
-            .collection('order')
-            .where('idUser', '==', uid)
-            .get();
-
-        const others = [];
-        snapshot.forEach(doc => {
-            if (doc.id !== uid) {
-                others.push({ id: doc.id, ...doc.data() });
-            }
-        });
-        setOrder(others);
-    };
-
     const fetchKomisiData = async () => {
         try {
             const uid = await AsyncStorage.getItem('uid');
@@ -164,12 +103,20 @@ const HomeScreen = () => {
         }
     };
 
+    const fetchProduct = async () => {
+        const snapshot = await firestore().collection('product').get();
+        const products = [];
+        snapshot.forEach(doc => {
+            products.push({ label: doc.data().nama, value: doc.data().nama, harga: doc.data().harga, desc2: doc.data().desc2 });
+        });
+        setProductItems(products);
+    };
+
+
     useEffect(() => {
         fetchData();
-        fetchProduct();
-        fetchOrder();
-        fetchUserData();
         fetchKomisiData();
+        fetchProduct();
     }, []);
 
     const formatPhone = (number) => {
@@ -243,36 +190,6 @@ const HomeScreen = () => {
         }
     };
 
-    const saveOrder = async () => {
-        const { nama, nik, address, phone } = newOrder;
-        if (!nama || !nik || !address || !phone) {
-            return Alert.alert('Validasi Gagal', 'Semua field wajib diisi.');
-        }
-
-        setLoading(true);
-        try {
-            const uid = await AsyncStorage.getItem('uid');
-            await firestore().collection('order').add({
-                ...newOrder,
-                status: 0,
-                idUser: uid,
-                parent: user.parent,
-                header: user.header,
-                isActive: true,
-                createdAt: firestore.FieldValue.serverTimestamp(),
-            });
-            Alert.alert('Sukses', 'Pesanan berhasil dibuat.');
-            setModalOrderVisible(false);
-            setEditingUserId(null);
-            fetchData();
-            fetchOrder();
-        } catch (error) {
-            Alert.alert('Error', 'Terjadi kesalahan saat menyimpan.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
 
     const handleEdit = (user) => {
         setNewUser({
@@ -309,51 +226,6 @@ const HomeScreen = () => {
         );
     };
 
-    const handleOrderDelete = (id) => {
-        Alert.alert(
-            'Konfirmasi Hapus',
-            'Apakah Anda yakin ingin menghapus user ini?',
-            [
-                { text: 'Batal', style: 'cancel' },
-                {
-                    text: 'Hapus',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await firestore().collection('order').doc(id).delete();
-                            fetchData();
-                            fetchOrder();
-                            Alert.alert('Sukses', 'Pesanan berhasil dihapus.');
-                        } catch (err) {
-                            Alert.alert('Gagal', 'Gagal menghapus user.');
-                        }
-                    }
-                }
-            ]
-        );
-    };
-
-    const openWhatsApp = () => {
-        const phoneNumber = '+6287825159746'; // Ganti dengan nomor tujuan WhatsApp
-        const message = 'Halo, saya ingin bertanya'; // Pesan yang ingin dikirim
-
-        // Membuka WhatsApp berdasarkan platform
-        let url = `https://wa.me/${phoneNumber}?text=${message}`;
-        if (Platform.OS === 'ios') {
-            url = `https://wa.me/${phoneNumber}?text=${message}`; // Untuk iOS
-        }
-
-        Linking.openURL(url).catch((err) => console.error('Tidak dapat membuka WhatsApp', err));
-    };
-
-    const handleSignOut = async () => {
-        try {
-            await AsyncStorage.removeItem('uid');
-        } catch (error) {
-            console.error("Sign out error: ", error);
-        }
-    };
-
     return (
         <SafeAreaView style={styles.backgroundStyle}>
             <StatusBar backgroundColor="#214937" barStyle="light-content" />
@@ -365,7 +237,6 @@ const HomeScreen = () => {
                                 <Text style={styles.welcome}>Hai, {user.roles}</Text>
                                 <Text style={styles.welcome}>{user.name}</Text>
                             </View>
-                            <Button title="Keluar" onPress={handleSignOut} color="#d9534f" />
                         </View>
 
                         <View style={styles.balanceContainer}>
@@ -373,63 +244,29 @@ const HomeScreen = () => {
                             <Text style={styles.balanceValue}>Rp {komisi?.toLocaleString() || '0'}</Text>
                         </View>
 
-                        <View style={{ marginBottom: 10, justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={styles.sectionTitle}>Order</Text>
-                            <TouchableOpacity
-                                style={styles.fab}
-                                onPress={() => {
-                                    setModalOrderVisible(true);
-                                }}
-                            >
-                                <Text style={styles.fabText}>Tambah Pesanan</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {order.length === 0 ? (
-                            <Text style={styles.empty}>Belum ada pesanan.</Text>
-                        ) : (
-                            order.map(u => (
-                                <View key={u.id} style={styles.userCard}>
-                                    <Text style={styles.userName}>{u.nama} ({u.phone})</Text>
-                                    <Text style={styles.userPhone}>{u.address}</Text>
-                                    <Text style={styles.userPhone}>Ongkir Rp {parseInt(u.hargaOngkir).toLocaleString('id')}</Text>
-                                    <Text style={styles.userPhone}>Harga Rp {u?.harga?.toLocaleString('id')}</Text>
-                                    {u.status === 0 &&
-                                        <>
-                                            <Text style={styles.userPhone}>Total Transfer Rp {(parseInt(u.hargaOngkir) + u?.harga).toLocaleString('id')}</Text>
-                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
-                                                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Rekening</Text>
-                                                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 12 }}> {rekening.nama}</Text>
-                                            </View><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}> </Text>
-                                                <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 13 }}>Bank {rekening.bank} {rekening.nomor}</Text>
-                                            </View></>
-                                    }
-                                    {u.status === 0 && <Text style={styles.userPhone}>Menunggu Konfirmasi</Text>}
-                                    {u.status === 1 && <Text style={styles.userPhone}>Pesanan Diterima</Text>}
-                                    {u.status === 2 && <Text style={styles.userPhone}>Pesanan Dikirim</Text>}
-                                    {u.status === 3 && <Text style={styles.userPhone}>Pesanan Selesai</Text>}
-                                    {u.status === 4 && <Text style={styles.userPhone}>Pesanan Dibatalkan</Text>}
-                                    {u.status === 5 && <Text style={styles.userPhone}>Pesanan Ditolak</Text>}
-                                    <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                                        <TouchableOpacity onPress={() => openWhatsApp()} style={[styles.actionButton, { backgroundColor: 'green' }]}>
-                                            <Text style={styles.actionText}>Chat Admin</Text>
-                                        </TouchableOpacity>
-                                        {u.status === 0 &&
-                                            <TouchableOpacity onPress={() => handleOrderDelete(u.id)} style={[styles.actionButton, { backgroundColor: '#dc3545' }]}>
-                                                <Text style={styles.actionText}>Hapus</Text>
-                                            </TouchableOpacity>
-                                        }
-                                        {u.status >= 4 &&
-                                            <TouchableOpacity onPress={() => handleOrderDelete(u.id)} style={[styles.actionButton, { backgroundColor: '#dc3545' }]}>
-                                                <Text style={styles.actionText}>Hapus</Text>
-                                            </TouchableOpacity>
-                                        }
-                                    </View>
+                        {productItems.length > 0 && (
+                            <View style={styles.goldContainer}>
+                                <Text style={styles.sectionTitle}>Emas Terkini</Text>
+                                <View style={styles.priceRow}>
+                                    <Text style={styles.priceLabel}>Product</Text>
+                                    <Text style={styles.priceLabel}>Harga Beli</Text>
+                                    <Text style={styles.priceLabel}>Harga Jual</Text>
                                 </View>
-                            ))
+                                {productItems.map((productItem) => {
+                                    const hargaBeli = Number(productItem.harga); // Asumsi produk memiliki field 'price' untuk harga beli
+                                    const hargaJual = parseInt(productItem.harga - (hargaBeli * 5.5/100).toFixed(0)); // Kalkulasi harga jual 5.5%
+                                    const nama = productItem.desc2;
+                                    return (
+                                        <View key={productItem.id} style={styles.priceRow}>
+                                            <Text style={styles.priceValue}>{nama}</Text>
+                                            <Text style={styles.priceValue}>Rp {hargaBeli.toLocaleString('id')}</Text>
+                                            <Text style={styles.priceValue}>Rp {hargaJual.toLocaleString('id-ID')}</Text>
+                                        </View>
+                                    )
+                                })}
+                            </View>
                         )}
-                        <View style={{ margin: 10 }}></View>
+
 
                         <View style={{ marginBottom: 10, justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
                             <Text style={styles.sectionTitle}>Anggota Team</Text>
@@ -470,7 +307,7 @@ const HomeScreen = () => {
                 )}
             </ScrollView>
 
-            <Modal visible={modalVisible} animationType="slide" transparent>
+            <Modal visible={modalVisible} animationType="fade" transparent>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContainer}>
                         <Text style={styles.modalTitle}>
@@ -528,91 +365,6 @@ const HomeScreen = () => {
                         </TouchableOpacity>
 
                         <TouchableOpacity onPress={() => setModalVisible(false)} style={{ marginTop: 10 }}>
-                            <Text style={{ textAlign: 'center', color: '#214937' }}>Batal</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-
-            <Modal visible={modalOrderVisible} animationType="slide" transparent>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>
-                            Pesanan Baru
-                        </Text>
-
-                        <TextInput
-                            placeholder="Nama"
-                            style={styles.input}
-                            value={newOrder.nama}
-                            onChangeText={(val) => setNewOrder({ ...newOrder, nama: val })}
-                        />
-                        <TextInput
-                            placeholder="NIK"
-                            style={styles.input}
-                            keyboardType="phone-pad"
-                            value={newOrder.nik}
-                            onChangeText={(val) => setNewOrder({ ...newOrder, nik: val })}
-                        />
-                        <TextInput
-                            placeholder="Alamat"
-                            style={styles.input}
-                            value={newOrder.address}
-                            onChangeText={(val) => setNewOrder({ ...newOrder, address: val })}
-                        />
-                        <TextInput
-                            placeholder="Nomor HP"
-                            style={styles.input}
-                            keyboardType="phone-pad"
-                            value={newOrder.phone}
-                            onChangeText={(val) => setNewOrder({ ...newOrder, phone: val })}
-                        />
-                        <TextInput
-                            placeholder="Ongkos Kirim"
-                            style={styles.input}
-                            keyboardType="number-pad"
-                            value={newOrder.hargaOngkir}
-                            onChangeText={(val) => setNewOrder({ ...newOrder, hargaOngkir: val })}
-                        />
-
-                        <View style={styles.dropdown}>
-                            <FlatList
-                                data={product}
-                                keyExtractor={item => item.id}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity
-                                        onPress={() => setNewOrder({ ...newOrder, product: item.nama, harga: item.harga })}
-                                        style={[
-                                            styles.roleItem,
-                                            newOrder.product === item.nama && styles.selectedRole,
-                                        ]}
-                                    >
-                                        <Text>{item.nama}</Text>
-                                        <Text>Rp {item?.harga?.toLocaleString('id')}</Text>
-
-                                    </TouchableOpacity>
-                                )}
-                            />
-                        </View>
-
-                        <View style={{ marginBottom: 10, justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={styles.sectionTitle}>Total Harga</Text>
-                            <Text style={styles.sectionTitle}>{(parseInt(newOrder.hargaOngkir) + parseInt(newOrder.harga)).toLocaleString('id')}</Text>
-                        </View>
-
-                        <TouchableOpacity
-                            style={styles.submitButton}
-                            onPress={saveOrder}
-                            disabled={loading}
-                        >
-                            {loading ? <ActivityIndicator color="#fff" /> : (
-                                <Text style={styles.submitText}>
-                                    {editingUserId ? 'Perbarui' : 'Pesan'}
-                                </Text>
-                            )}
-                        </TouchableOpacity>
-
-                        <TouchableOpacity onPress={() => setModalOrderVisible(false)} style={{ marginTop: 10 }}>
                             <Text style={{ textAlign: 'center', color: '#214937' }}>Batal</Text>
                         </TouchableOpacity>
                     </View>
@@ -746,6 +498,40 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 12,
     },
+    goldCard: {
+        backgroundColor: '#fff9e6',
+        borderWidth: 1,
+        borderColor: '#f5c542',
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 20,
+    },
+    goldTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        color: '#214937',
+    },
+    priceRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 5,
+    },
+    priceLabel: {
+        fontSize: 14,
+        color: '#333',
+    },
+    priceValue: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#214937',
+    },
+    goldContainer: {
+        backgroundColor: '#fdf7e3',
+        padding: 15,
+        borderRadius: 12,
+        marginBottom: 20,
+    }
 });
 
 export default HomeScreen;

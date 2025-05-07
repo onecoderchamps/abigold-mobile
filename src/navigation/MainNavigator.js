@@ -6,89 +6,13 @@ import { Image, StyleSheet } from 'react-native';
 import OrderScreen from '../screens/OrderScreen';
 import AccountScreen from '../screens/AccountScreen';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import DetailScreen from '../screens/FastRide/ChoiceScreen';
-import AgentScreen from '../screens/FastRide/AgentScreen';
-import OrderCheckOutScreen from '../screens/FastRide/OrderCheckoutScreen';
-import OrderCheckAgentOut from '../screens/FastRide/OrderCheckoutAgentScreen';
-import AccountAgentScreen from '../screens/OrderAgenScreen';
-import MemberAgentScreen from '../screens/FastRide/CreaterMemberScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 const HomeStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Home" component={HomeScreen} />
-    <Stack.Screen name="Detail" component={DetailScreen} options={{
-      title: 'Detail',
-      headerStyle: { 
-        backgroundColor: '#214937', 
-        elevation: 0, // Menghilangkan shadow di Android
-        shadowOpacity: 0, // Menghilangkan shadow di iOS
-        alignItems: 'center',
-      },
-      headerTitleAlign: 'center',
-      headerTintColor: '#fff',
-      headerShadowVisible: false,
-      headerTitleStyle: { fontWeight: 'normal',fontFamily:'Montserrat-Regular' },
-      headerShown: true,
-    }} />
-    <Stack.Screen name="OrderCheckOutScreen" component={OrderCheckOutScreen} options={{
-      title: 'Order',
-      headerStyle: { 
-        backgroundColor: '#214937', 
-        elevation: 0, // Menghilangkan shadow di Android
-        shadowOpacity: 0, // Menghilangkan shadow di iOS
-        alignItems: 'center',
-      },
-      headerTitleAlign: 'center',
-      headerTintColor: '#fff',
-      headerShadowVisible: false,
-      headerTitleStyle: { fontWeight: 'normal',fontFamily:'Montserrat-Regular' },
-      headerShown: true,
-    }} />
-    <Stack.Screen name="OrderCheckOutAgentScreen" component={OrderCheckAgentOut} options={{
-      title: 'OrderAgent',
-      headerStyle: { 
-        backgroundColor: '#214937', 
-        elevation: 0, // Menghilangkan shadow di Android
-        shadowOpacity: 0, // Menghilangkan shadow di iOS
-        alignItems: 'center',
-      },
-      headerTitleAlign: 'center',
-      headerTintColor: '#fff',
-      headerShadowVisible: false,
-      headerTitleStyle: { fontWeight: 'normal',fontFamily:'Montserrat-Regular' },
-      headerShown: true,
-    }} />
-    <Stack.Screen name="Agent" component={AgentScreen} options={{
-      title: 'Mitra ABI',
-      headerStyle: { 
-        backgroundColor: '#214937', 
-        elevation: 0, // Menghilangkan shadow di Android
-        shadowOpacity: 0, // Menghilangkan shadow di iOS
-        alignItems: 'center',
-      },
-      headerTitleAlign: 'center',
-      headerTintColor: '#fff',
-      headerShadowVisible: false,
-      headerTitleStyle: { fontWeight: 'normal',fontFamily:'Montserrat-Regular' },
-      headerShown: true,
-    }} />
-    <Stack.Screen name="MemberAgent" component={MemberAgentScreen} options={{
-      title: 'Member',
-      headerStyle: { 
-        backgroundColor: '#214937', 
-        elevation: 0, // Menghilangkan shadow di Android
-        shadowOpacity: 0, // Menghilangkan shadow di iOS
-        alignItems: 'center',
-      },
-      headerTitleAlign: 'center',
-      headerTintColor: '#fff',
-      headerShadowVisible: false,
-      headerTitleStyle: { fontWeight: 'normal',fontFamily:'Montserrat-Regular' },
-      headerShown: true,
-    }} />
+    <Stack.Screen name="Home" component={MainNavigator} />
   </Stack.Navigator>
   
 );
@@ -140,8 +64,8 @@ const MainNavigator = () => (
       }}
     />
     <Tab.Screen
-      name="Member"
-      component={AccountAgentScreen}
+      name="Account"
+      component={AccountScreen}
       options={{
         tile: 'Home Page',
         headerShown: false,

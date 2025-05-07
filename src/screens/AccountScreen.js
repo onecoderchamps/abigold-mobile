@@ -10,9 +10,9 @@ const AccountScreen = () => {
   const signOut = async () => {
     try {
       // await auth().signOut();
-      await GoogleSignin.signOut();
+      // await GoogleSignin.signOut();
       await AsyncStorage.removeItem('uid');
-      // Alert.alert('Logged Out', 'You have been logged out.');
+      Alert.alert('Logged Out', 'You have been logged out.');
     } catch (error) {
       Alert.alert('Error', error.message);
     }
