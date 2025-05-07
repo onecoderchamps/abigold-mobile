@@ -11,6 +11,7 @@ import { getrekening } from '../api/functions';
 const { width } = Dimensions.get('window');
 
 const AccountScreen = () => {
+  const [user, setUser] = useState(null);
   const [order, setOrder] = useState([]);
   const [rekening, setrekening] = useState(null);
   const [modalOrderVisible, setModalOrderVisible] = useState(false);
@@ -35,6 +36,16 @@ const AccountScreen = () => {
   });
   const [fieldError, setFieldError] = useState({});
 
+  const fetchData = async () => {
+    const uid = await AsyncStorage.getItem('uid');
+    if (!uid) return;
+
+    const doc = await firestore().collection('users').doc(uid).get();
+    if (doc.exists) {
+        const userData = doc.data();
+        setUser(userData);
+    }
+};
 
   const fetchKurir = async () => {
     const uid = await AsyncStorage.getItem('uid');
@@ -115,13 +126,15 @@ const AccountScreen = () => {
       await firestore().collection('order').add({
         ...newOrder,
         harga: parseInt(newOrder.jumlah * newOrder.harga),
+        header: user.header,
+        parent: user.parent,
         status: 0,
         idUser: uid,
         isActive: true,
         createdAt: firestore.FieldValue.serverTimestamp(),
       });
       Alert.alert('Sukses', 'Pesanan berhasil dibuat.');
-      setModalOrderVisible(false);
+      setModalOrderVisible(false);user
       setNewOrder({
         nama: '',
         nik: '',
@@ -180,6 +193,7 @@ const AccountScreen = () => {
     fetchUserData();
     fetchProduct();
     fetchKurir();
+    fetchData();
     const intervalId = setInterval(() => {
       fetchOrderData();
       fetchProduct();

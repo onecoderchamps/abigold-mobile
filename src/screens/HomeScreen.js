@@ -226,6 +226,35 @@ const HomeScreen = () => {
         );
     };
 
+    const handleWithdraw = () => {
+        // Aksi saat tombol Withdraw ditekan
+        // Misalnya, bisa tampilkan dialog konfirmasi atau lakukan proses penarikan.
+        Alert.alert(
+            'Konfirmasi Withdraw',
+            'Apakah Anda yakin ingin menarik komisi Anda?',
+            [
+                { text: 'Batal', style: 'cancel' },
+                {
+                    text: 'Withdraw',
+                    style: 'default',
+                    onPress: async () => {
+                        await fetch('https://app.saungwa.com/api/create-message', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              to: '+6281310531713',
+                              authkey: "Z8hxOuMsQapmnfe3GFkNbmgWMuOLLcVxnU1oO6fufLFKy0bpS4",
+                              appkey: "165ba4e8-713c-40e2-92a5-3696ae54d45f",
+                              message: `Hallo admin, saya sebagai mau withdraw dengan nomor ` + user.phone
+                            }),
+                          });
+                        console.log('Penarikan berhasil');
+                    },
+                },
+            ]
+        );
+    };
+
     return (
         <SafeAreaView style={styles.backgroundStyle}>
             <StatusBar backgroundColor="#214937" barStyle="light-content" />
@@ -240,8 +269,18 @@ const HomeScreen = () => {
                         </View>
 
                         <View style={styles.balanceContainer}>
-                            <Text style={styles.balanceLabel}>Total Komisi</Text>
-                            <Text style={styles.balanceValue}>Rp {komisi?.toLocaleString() || '0'}</Text>
+                            <View>
+                                <Text style={styles.balanceLabel}>Total Komisi</Text>
+                                <Text style={styles.balanceValue}>Rp {komisi?.toLocaleString() || '0'}</Text>
+                            </View>
+
+                            {/* Tambahkan tombol Withdraw */}
+                            <TouchableOpacity
+                                style={styles.withdrawButton}
+                                onPress={() => handleWithdraw()}
+                            >
+                                <Text style={styles.withdrawText}>Withdraw</Text>
+                            </TouchableOpacity>
                         </View>
 
                         {productItems.length > 0 && (
@@ -250,11 +289,11 @@ const HomeScreen = () => {
                                 <View style={styles.priceRow}>
                                     <Text style={styles.priceLabel}>Product</Text>
                                     <Text style={styles.priceLabel}>Harga Beli</Text>
-                                    <Text style={styles.priceLabel}>Harga Jual</Text>
+                                    <Text style={styles.priceLabel}>BuyBack</Text>
                                 </View>
                                 {productItems.map((productItem) => {
                                     const hargaBeli = Number(productItem.harga); // Asumsi produk memiliki field 'price' untuk harga beli
-                                    const hargaJual = parseInt(productItem.harga - (hargaBeli * 5.5/100).toFixed(0)); // Kalkulasi harga jual 5.5%
+                                    const hargaJual = parseInt(productItem.harga - (hargaBeli * 5.5 / 100).toFixed(0)); // Kalkulasi harga jual 5.5%
                                     const nama = productItem.desc2;
                                     return (
                                         <View key={productItem.id} style={styles.priceRow}>
@@ -389,6 +428,8 @@ const styles = StyleSheet.create({
         padding: 20,
         borderRadius: 12,
         marginBottom: 30,
+        flexDirection:'row',
+        justifyContent:'space-between'
     },
     balanceLabel: {
         color: '#fff',
@@ -531,7 +572,20 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 12,
         marginBottom: 20,
-    }
+    },
+    withdrawButton: {
+        backgroundColor: '#f1c40f',
+        borderRadius: 8,
+        width:100,
+        height:30,
+        alignItems:'center',
+        justifyContent:'center'
+    },
+    withdrawText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });
 
 export default HomeScreen;
