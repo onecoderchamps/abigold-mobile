@@ -52,22 +52,22 @@ const LoginScreen = ({ navigation }) => {
         return;
       }
 
-      // // Cek apakah akun sudah diaktifkan
-      // const userSnapshot = await firestore()
-      //   .collection('users')
-      //   .where('phone', '==', formattedPhone)
-      //   .limit(1)
-      //   .get();
+      // Cek apakah akun sudah diaktifkan
+      const userSnapshot = await firestore()
+        .collection('users')
+        .where('phone', '==', formattedPhone)
+        .limit(1)
+        .get();
 
-      // if (!userSnapshot.empty) {
-      //   const userDoc = userSnapshot.docs[0];
-      //   const userData = userDoc.data();
-      //   if (userData.isActive === false) {
-      //     Alert.alert("Akun Belum Diaktivasi", "Akun Anda belum diaktifkan. Silakan hubungi admin.");
-      //     setLoading(false);
-      //     return;
-      //   }
-      // }
+      if (!userSnapshot.empty) {
+        const userDoc = userSnapshot.docs[0];
+        const userData = userDoc.data();
+        if (userData.isActive === false) {
+          Alert.alert("Akun Belum Diaktivasi", "Akun Anda belum diaktifkan. Silakan hubungi admin.");
+          setLoading(false);
+          return;
+        }
+      }
 
       
       const appKey = await getAppKey();
