@@ -16,7 +16,7 @@ import {
     Button,
     Alert,
 } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
+import firestore, { doc, getDoc } from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getOrderKomisi, getrekening } from '../api/functions';
 
@@ -27,8 +27,11 @@ const HomeScreen = () => {
     const [refUsers, setRefUsers] = useState([]);
     const [komisi, setKomisi] = useState(0);
     const [modalVisible, setModalVisible] = useState(false);
+    const [modalKomisiVisible, setModalKomisiVisible] = useState(false);
     const [loadingwithdraw, setloadingwithdraw] = useState(false);
     const [productItems, setProductItems] = useState([]);
+    const [komisiData, setKomisiData] = useState([]);
+
     const [newUser, setNewUser] = useState({
         name: '',
         roles: '',
@@ -39,15 +42,15 @@ const HomeScreen = () => {
     const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(false);
     const [editingUserId, setEditingUserId] = useState(null);
-      const [rekening, setrekening] = useState(null);
-    
+    const [rekening, setrekening] = useState(null);
+
 
     const fetchUserData = async () => {
         const data = await getrekening();
         if (data) {
-          setrekening(data);
+            setrekening(data);
         }
-      };
+    };
 
     const fetchData = async () => {
         const uid = await AsyncStorage.getItem('uid');
@@ -57,31 +60,35 @@ const HomeScreen = () => {
         if (doc.exists) {
             const userData = doc.data();
             setUser(userData);
+            console.log('User data:', userData);
 
-            const snapshot = await firestore()
-                .collection('users')
-                .where('parent', '==', uid)
-                .get();
+            if (userData.roles !== 'User') {
 
-            const others = [];
-            snapshot.forEach(doc => {
-                if (doc.id !== uid) {
-                    others.push({ id: doc.id, ...doc.data() });
-                }
-            });
+                const snapshot = await firestore()
+                    .collection('users')
+                    .where('parent', '==', uid)
+                    .get();
 
-            const updatedData = await Promise.all(
-                others.map(async (data) => {
-                    const userData = await getOrderKomisi({ uid: data.id });
-                    const totalBiaya = userData.reduce((total, current) => total + Number(current.biayaKomisi || 0), 0);
-                    const saldo = totalBiaya;
-                    return {
-                        ...data,
-                        saldo, // tambahkan properti komisi ke data
-                    };
-                })
-            );
-            setRefUsers(updatedData);
+                const others = [];
+                snapshot.forEach(doc => {
+                    if (doc.id !== uid) {
+                        others.push({ id: doc.id, ...doc.data() });
+                    }
+                });
+
+                const updatedData = await Promise.all(
+                    others.map(async (data) => {
+                        const userData = await getOrderKomisi({ uid: data.id });
+                        const totalBiaya = userData.reduce((total, current) => total + Number(current.biayaKomisi || 0), 0);
+                        const saldo = totalBiaya;
+                        return {
+                            ...data,
+                            saldo, // tambahkan properti komisi ke data
+                        };
+                    })
+                );
+                setRefUsers(updatedData);
+            }
         }
 
         const rolesSnap = await firestore().collection('roles').get();
@@ -94,40 +101,85 @@ const HomeScreen = () => {
             }));
         setRoles(parsedRoles);
     };
-
     const fetchKomisiData = async () => {
+
+        if (user.roles === 'User') return;
         try {
             const uid = await AsyncStorage.getItem('uid');
-            const userData = await getOrderKomisi({ uid: uid });
+            if (!uid) {
+                console.log('UID tidak ditemukan di AsyncStorage');
+                return 0;
+            }
+
+            const userData = await getOrderKomisi({ uid });
+
             if (userData && Array.isArray(userData)) {
-                const totalBiaya = userData.reduce((total, current) => total + Number(current.biayaKomisi || 0), 0);
+                // Proses paralel untuk ambil data Firestore
+                const dataArray = await Promise.all(
+                    userData.map(async (element) => {
+                        let orderData = null;
+
+                        if (element.idProduct) {
+                            try {
+                                const snapshot = await firestore()
+                                    .collection('order')
+                                    .doc(element.idProduct)
+                                    .get();
+
+                                if (snapshot.exists) {
+                                    orderData = {
+                                        id: snapshot.id,
+                                        ...snapshot.data()
+                                    };
+                                }
+                            } catch (error) {
+                                console.error(`Gagal mengambil data order ${element.idProduct}`, error);
+                            }
+                        }
+
+                        return {
+                            ...element,
+                            order: orderData, // data order ditambahkan
+                        };
+                    })
+                );
+
+                const totalBiaya = dataArray.reduce(
+                    (total, current) => total + Number(current.biayaKomisi || 0),
+                    0
+                );
+
+                setKomisiData(dataArray); // <- pastikan ini berasal dari useState
                 setKomisi(totalBiaya);
+
+                console.log('Total Komisi:', dataArray);
                 return totalBiaya;
             } else {
-                console.log('No user data found');
+                console.log('Data order tidak ditemukan atau bukan array');
                 return 0;
             }
         } catch (error) {
-            console.error('Error fetching komisi data:', error);
+            console.error('Terjadi kesalahan saat mengambil data komisi:', error);
             return 0;
         }
     };
+
 
     const fetchProduct = async () => {
         const snapshot = await firestore().collection('product').get();
         const products = [];
         snapshot.forEach(doc => {
-            products.push({ label: doc.data().nama, value: doc.data().nama, harga: doc.data().harga, desc2: doc.data().desc2 });
+            products.push({ label: doc.data().nama, value: doc.data().nama, harga: doc.data().harga, desc2: doc.data().desc2, hargaBuyback: doc.data().hargaBuyback });
         });
         setProductItems(products);
     };
 
 
     useEffect(() => {
-        fetchUserData();
         fetchData();
         fetchKomisiData();
         fetchProduct();
+        fetchUserData();
     }, []);
 
     const formatPhone = (number) => {
@@ -254,14 +306,14 @@ const HomeScreen = () => {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                              to: user.phone,
-                              authkey: "Z8hxOuMsQapmnfe3GFkNbmgWMuOLLcVxnU1oO6fufLFKy0bpS4",
-                              appkey: "165ba4e8-713c-40e2-92a5-3696ae54d45f",
-                              message: `Hallo ${user.name}, untuk melakukan penarikan komisi, mohon lampirkan informasi dengan format wd:{nama akun}/{akun bank}/{nomor rekening} contoh wd:user/bca/123456`
+                                to: user.phone,
+                                authkey: "Z8hxOuMsQapmnfe3GFkNbmgWMuOLLcVxnU1oO6fufLFKy0bpS4",
+                                appkey: "165ba4e8-713c-40e2-92a5-3696ae54d45f",
+                                message: `Hallo ${user.name}, untuk melakukan penarikan komisi, mohon lampirkan informasi dengan format wd:{nama akun}/{akun bank}/{nomor rekening} contoh wd:user/bca/123456`
                             }),
-                          });
+                        });
                         setloadingwithdraw(false)
-                        Alert.alert("Pemberitahuan","Kami sudah mengirimkan permintaan Withdraw mohon menunggu admin menghubungi anda terimakasih")
+                        Alert.alert("Pemberitahuan", "Kami sudah mengirimkan permintaan Withdraw mohon menunggu admin menghubungi anda terimakasih")
                     },
                 },
             ]
@@ -276,26 +328,30 @@ const HomeScreen = () => {
                     <>
                         <View style={{ margin: 10, justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
                             <View>
-                                <Text style={styles.welcome}>Hai, {user.roles}</Text>
+                                {user.roles !== 'User' &&
+                                    <Text style={styles.welcome}>Hai, {user.roles}</Text>
+                                }
                                 <Text style={styles.welcome}>{user.name}</Text>
                             </View>
                         </View>
 
-                        <View style={styles.balanceContainer}>
-                            <View>
-                                <Text style={styles.balanceLabel}>Total Komisi</Text>
-                                <Text style={styles.balanceValue}>Rp {komisi?.toLocaleString() || '0'}</Text>
-                            </View>
+                        {user.roles !== 'User' &&
+                            <View style={styles.balanceContainer}>
+                                <View>
+                                    <Text style={styles.balanceLabel}>Total Komisi</Text>
+                                    <Text style={styles.balanceValue}>Rp {komisi?.toLocaleString() || '0'}</Text>
+                                </View>
 
-                            {/* Tambahkan tombol Withdraw */}
-                            <TouchableOpacity
-                                disabled={loadingwithdraw}
-                                style={styles.withdrawButton}
-                                onPress={() => handleWithdraw()}
-                            >
-                                <Text style={styles.withdrawText}>{loadingwithdraw ? "Proses" : "Withdraw"}</Text>
-                            </TouchableOpacity>
-                        </View>
+                                {/* Tambahkan tombol Withdraw */}
+                                <TouchableOpacity
+                                    disabled={loadingwithdraw}
+                                    style={styles.withdrawButton}
+                                    onPress={() => setModalKomisiVisible(true)}
+                                >
+                                    <Text style={styles.withdrawText}>{loadingwithdraw ? "Proses" : "Withdraw"}</Text>
+                                </TouchableOpacity>
+                            </View>
+                        }
 
                         {productItems.length > 0 && (
                             <View style={styles.goldContainer}>
@@ -307,7 +363,7 @@ const HomeScreen = () => {
                                 </View>
                                 {productItems.map((productItem) => {
                                     const hargaBeli = Number(productItem.harga); // Asumsi produk memiliki field 'price' untuk harga beli
-                                    const hargaJual = parseInt(productItem.harga - (hargaBeli * 5.5 / 100).toFixed(0)); // Kalkulasi harga jual 5.5%
+                                    const hargaJual = Number(productItem.hargaBuyback); // Asumsi produk memiliki field 'price' untuk harga beli
                                     const nama = productItem.desc2;
                                     return (
                                         <View key={productItem.id} style={styles.priceRow}>
@@ -320,42 +376,45 @@ const HomeScreen = () => {
                             </View>
                         )}
 
+                        {user.roles !== 'User' &&
+                            <>
+                                <View style={{ marginBottom: 10, justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
+                                    <Text style={styles.sectionTitle}>Anggota Team</Text>
+                                    <TouchableOpacity
+                                        style={styles.fab}
+                                        onPress={() => {
+                                            setNewUser({ name: '', roles: '', address: '', phone: '', komisi: 0 });
+                                            setEditingUserId(null);
+                                            setModalVisible(true);
+                                        }}
+                                    >
+                                        <Text style={styles.fabText}>Tambah Member</Text>
+                                    </TouchableOpacity>
+                                </View>
 
-                        <View style={{ marginBottom: 10, justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={styles.sectionTitle}>Anggota Team</Text>
-                            <TouchableOpacity
-                                style={styles.fab}
-                                onPress={() => {
-                                    setNewUser({ name: '', roles: '', address: '', phone: '', komisi: 0 });
-                                    setEditingUserId(null);
-                                    setModalVisible(true);
-                                }}
-                            >
-                                <Text style={styles.fabText}>Tambah Member</Text>
-                            </TouchableOpacity>
-                        </View>
+                                {refUsers.length === 0 ? (
+                                    <Text style={styles.empty}>Belum ada anggota.</Text>
+                                ) : (
+                                    refUsers.map(u => (
+                                        <View key={u.id} style={styles.userCard}>
+                                            <Text style={styles.userName}>{u.name} ({u.roles})</Text>
+                                            <Text style={styles.userPhone}>{u.phone}</Text>
+                                            <Text style={styles.userPhone}>Komisi {u.komisi}%</Text>
+                                            <Text style={styles.userPhone}>Saldo Rp {u?.saldo?.toLocaleString('id')}</Text>
 
-                        {refUsers.length === 0 ? (
-                            <Text style={styles.empty}>Belum ada anggota.</Text>
-                        ) : (
-                            refUsers.map(u => (
-                                <View key={u.id} style={styles.userCard}>
-                                    <Text style={styles.userName}>{u.name} ({u.roles})</Text>
-                                    <Text style={styles.userPhone}>{u.phone}</Text>
-                                    <Text style={styles.userPhone}>Komisi {u.komisi}%</Text>
-                                    <Text style={styles.userPhone}>Saldo Rp {u?.saldo?.toLocaleString('id')}</Text>
-
-                                    <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                                        <TouchableOpacity onPress={() => handleEdit(u)} style={[styles.actionButton, { backgroundColor: '#ffc107' }]}>
-                                            <Text style={styles.actionText}>Edit</Text>
-                                        </TouchableOpacity>
-                                        {/* <TouchableOpacity onPress={() => handleDelete(u.id)} style={[styles.actionButton, { backgroundColor: '#dc3545' }]}>
+                                            <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                                                <TouchableOpacity onPress={() => handleEdit(u)} style={[styles.actionButton, { backgroundColor: '#ffc107' }]}>
+                                                    <Text style={styles.actionText}>Edit</Text>
+                                                </TouchableOpacity>
+                                                {/* <TouchableOpacity onPress={() => handleDelete(u.id)} style={[styles.actionButton, { backgroundColor: '#dc3545' }]}>
                                             <Text style={styles.actionText}>Hapus</Text>
                                         </TouchableOpacity> */}
-                                    </View>
-                                </View>
-                            ))
-                        )}
+                                            </View>
+                                        </View>
+                                    ))
+                                )}
+                            </>
+                        }
                     </>
                 )}
             </ScrollView>
@@ -423,6 +482,54 @@ const HomeScreen = () => {
                     </View>
                 </View>
             </Modal>
+            <Modal visible={modalKomisiVisible} animationType="fade" transparent>
+                <ScrollView style={{ flex: 1, backgroundColor: 'white' }} contentContainerStyle={{ padding: 20, }}>
+                    <View style={styles.modalContainer}>
+                        {komisiData.map((item, index) => (
+                            <View key={index} style={styles.goldCard}>
+                                <View style={styles.priceRow2}>
+                                    <Text style={styles.goldTitle}>Pembeli</Text>
+                                    <Text style={styles.goldTitle}>{item.order.nama}</Text>
+                                </View>
+                                <View style={styles.priceRow2}>
+                                    {Number(((item.biayaKomisi / item.order.harga) * 100).toFixed(2)) === 0.25 &&
+                                        <Text style={styles.goldTitle}>Royalty</Text>
+                                    }
+                                    {Number(((item.biayaKomisi / item.order.harga) * 100).toFixed(2)) !== 0.25 &&
+                                        <Text style={styles.goldTitle}>Komisi</Text>
+                                    }
+                                    <Text style={styles.goldTitle}>Rp {item.biayaKomisi?.toLocaleString('id')}</Text>
+                                </View>
+
+                                <View style={styles.priceRow2}>
+                                    <Text style={styles.goldTitle}>Tanggal Pembelian</Text>
+                                    <Text style={styles.goldTitle}>Tanggal {item.createdAt?.toDate().toLocaleDateString('id-ID')}</Text>
+                                </View>
+
+                            </View>
+                        ))}
+                        <View style={styles.priceRow}>
+                            <Text style={styles.goldTitle}>Total</Text>
+                            <Text style={styles.goldTitle}>Rp {komisi?.toLocaleString('id')}</Text>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.submitButton}
+                            onPress={handleWithdraw}
+                            disabled={loading}
+                        >
+                            {loading ? <ActivityIndicator color="#fff" /> : (
+                                <Text style={styles.submitText}>
+                                    Tarik Komisi
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => setModalKomisiVisible(false)} style={{ marginTop: 10 }}>
+                            <Text style={{ textAlign: 'center', color: '#214937' }}>Batal</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -442,8 +549,8 @@ const styles = StyleSheet.create({
         padding: 20,
         borderRadius: 12,
         marginBottom: 30,
-        flexDirection:'row',
-        justifyContent:'space-between'
+        flexDirection: 'row',
+        justifyContent: 'space-between'
     },
     balanceLabel: {
         color: '#fff',
@@ -572,6 +679,10 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginBottom: 5,
     },
+    priceRow2: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
     priceLabel: {
         fontSize: 14,
         color: '#333',
@@ -590,10 +701,10 @@ const styles = StyleSheet.create({
     withdrawButton: {
         backgroundColor: '#f1c40f',
         borderRadius: 8,
-        width:100,
-        height:30,
-        alignItems:'center',
-        justifyContent:'center'
+        width: 100,
+        height: 30,
+        alignItems: 'center',
+        justifyContent: 'center'
     },
     withdrawText: {
         color: '#fff',

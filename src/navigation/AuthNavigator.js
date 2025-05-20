@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/LoginScreen';
 import OtpScreen from '../screens/OtpScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,18 @@ export default function App() {
         component={OtpScreen}
         options={{
           title: 'OTP',
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: '#214937', // Mengatur warna latar belakang header
+          },
+          headerTintColor: '#fff', // Mengatur warna teks header menjadi putih
+        }}
+      />
+      <Stack.Screen
+        name="Register"
+        component={RegisterScreen}
+        options={{
+          title: 'Register',
           headerShown: true,
           headerStyle: {
             backgroundColor: '#214937', // Mengatur warna latar belakang header

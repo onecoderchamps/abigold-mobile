@@ -45,10 +45,10 @@ const MainNavigator = () => (
       }}
     />
     <Tab.Screen
-      name="Aktifitas"
+      name="Order"
       component={OrderScreen}
       options={{
-        tile: 'Home Page',
+        tile: 'Order Emas',
         headerShown: false,
         color: '#fff',
         fontFamily:'Montserrat-Regular',

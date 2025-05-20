@@ -47,6 +47,36 @@ const getrekening = async () => {
     }
 };
 
+const getAuthKey = async () => {
+    try {
+        const doc = await firestore().collection('setting').doc("authkey").get();
+
+        if (doc.exists) {
+            const userData = { id: doc.id, ...doc.data() };
+            return userData;
+        } else {
+            return null;
+        }
+    } catch (error) {
+        return null;
+    }
+};
+
+const getAppKey = async () => {
+    try {
+        const doc = await firestore().collection('setting').doc("appkey").get();
+
+        if (doc.exists) {
+            const userData = { id: doc.id, ...doc.data() };
+            return userData;
+        } else {
+            return null;
+        }
+    } catch (error) {
+        return null;
+    }
+};
+
 const getDriver = async (user) => {
     try {
         const doc = await firestore().collection('mitra').doc(user).get();
@@ -238,5 +268,7 @@ export {
     getOrderKomisi,
     getMember,
     deleteOrder,
-    deleteKomisi
+    deleteKomisi,
+    getAppKey,
+    getAuthKey
 }

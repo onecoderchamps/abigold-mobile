@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, Button, Alert,
+  View, Text, TextInput, Alert,
   StyleSheet, Image, KeyboardAvoidingView,
   Platform, TouchableWithoutFeedback, Keyboard,
   TouchableOpacity
@@ -8,13 +8,13 @@ import {
 import firestore from '@react-native-firebase/firestore';
 import { getAppKey, getAuthKey } from '../api/functions';
 
-const LoginScreen = ({ navigation }) => {
-  const [phoneNumber, setPhoneNumber] = useState('');
+const RegisterScreen = ({ navigation }) => {
+  const [fullname, setFullname] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const generateOtp = () => {
-    return Math.floor(1000 + Math.random() * 9000).toString();
-  };
+  const generateOtp = () => Math.floor(1000 + Math.random() * 9000).toString();
 
   const formatPhoneNumber = (number) => {
     const cleaned = number.replace(/[^0-9]/g, '');
@@ -26,7 +26,7 @@ const LoginScreen = ({ navigation }) => {
     return '+62' + cleaned;
   };
 
-  const checkPhoneInFirebase = async (formattedPhone) => {
+  const checkPhoneExists = async (formattedPhone) => {
     const snapshot = await firestore()
       .collection('users')
       .where('phone', '==', formattedPhone)
@@ -35,41 +35,23 @@ const LoginScreen = ({ navigation }) => {
     return !snapshot.empty;
   };
 
-  const sendOtp = async () => {
-    if (!phoneNumber.trim()) {
-      Alert.alert("Error", "Nomor ponsel tidak boleh kosong.");
+  const handleRegister = async () => {
+    if (!fullname || !phone || !email) {
+      Alert.alert('Error', 'Semua field wajib diisi.');
       return;
     }
 
-    const formattedPhone = formatPhoneNumber(phoneNumber);
-
+    const formattedPhone = formatPhoneNumber(phone);
     setLoading(true);
+
     try {
-      const exists = await checkPhoneInFirebase(formattedPhone);
-      if (!exists) {
-        navigation.navigate('Register', { phoneNumber: formattedPhone });
+      const exists = await checkPhoneExists(formattedPhone);
+      if (exists) {
+        Alert.alert("Error", "Nomor ponsel sudah terdaftar.");
         setLoading(false);
         return;
       }
 
-      // // Cek apakah akun sudah diaktifkan
-      // const userSnapshot = await firestore()
-      //   .collection('users')
-      //   .where('phone', '==', formattedPhone)
-      //   .limit(1)
-      //   .get();
-
-      // if (!userSnapshot.empty) {
-      //   const userDoc = userSnapshot.docs[0];
-      //   const userData = userDoc.data();
-      //   if (userData.isActive === false) {
-      //     Alert.alert("Akun Belum Diaktivasi", "Akun Anda belum diaktifkan. Silakan hubungi admin.");
-      //     setLoading(false);
-      //     return;
-      //   }
-      // }
-
-      
       const appKey = await getAppKey();
       const authKey = await getAuthKey();
       const otp = generateOtp();
@@ -88,34 +70,41 @@ const LoginScreen = ({ navigation }) => {
       const data = await response.text();
 
       if (response.ok) {
-        const otpRef = firestore().collection('otp');
-        const existing = await otpRef.where('phone', '==', formattedPhone).limit(1).get();
 
-        if (!existing.empty) {
-          // Jika sudah ada, update OTP-nya
-          const docId = existing.docs[0].id;
-          await otpRef.doc(docId).update({
-            otp: otp,
-            createdAt: firestore.FieldValue.serverTimestamp()
-          });
-        } else {
-          // Jika belum ada, buat baru
-          const otpRefs = firestore().collection('users');
-          const existings = await otpRefs.where('phone', '==', formattedPhone).limit(1).get();
-          const docId = existings.docs[0].id;
-          await otpRef.add({
-            uid: docId,
-            phone: formattedPhone,
-            otp: otp,
-            createdAt: firestore.FieldValue.serverTimestamp()
-          });
-        }
+        const userData = {
+          name: fullname,
+          email,
+          address:"",
+          phone: formattedPhone,
+          komisi:0,
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+      };
+        // Simpan ke Firestore
+        const userRef = await firestore().collection('users').add({
+          ...userData,
+          parent: "",
+          header: "",
+          balance: 0,
+          roles:"User",
+          referal: Math.floor(10000 + Math.random() * 90000).toString(),
+          isActive: true,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+        });
+
+        // Simpan OTP
+        await firestore().collection('otp').add({
+          uid: userRef.id,
+          phone: formattedPhone,
+          otp: otp,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+        });
+
         navigation.navigate('Otp', { phoneNumber: formattedPhone, otp });
       } else {
-        Alert.alert('Gagal', data || 'Terjadi kesalahan saat mengirim OTP.');
+        Alert.alert("Gagal", data || 'Gagal mengirim OTP.');
       }
-    } catch (error) {
-      Alert.alert('Error', 'Gagal memeriksa data atau mengirim OTP.');
+    } catch (err) {
+      Alert.alert('Error', 'Terjadi kesalahan saat mendaftar.');
     } finally {
       setLoading(false);
     }
@@ -125,27 +114,43 @@ const LoginScreen = ({ navigation }) => {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
-          <View style={styles.logoContainer}>
-            <Image source={require('../asset/logo.png')} style={styles.logo} resizeMode="contain" />
-          </View>
-
           <View style={styles.bottomContainer}>
-            <Text style={styles.label}>Masukkan Nomor Ponsel</Text>
+            <Text style={styles.label}>Nama Lengkap</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nama lengkap"
+              value={fullname}
+              onChangeText={setFullname}
+              editable={!loading}
+            />
+
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+              editable={!loading}
+            />
+
+            <Text style={styles.label}>Nomor Ponsel</Text>
             <TextInput
               style={styles.input}
               placeholder="Cth 081234567890"
               keyboardType="phone-pad"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
+              value={phone}
+              onChangeText={setPhone}
               editable={!loading}
             />
+
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonLoading]}
-              onPress={sendOtp}
+              onPress={handleRegister}
               disabled={loading}
             >
               <Text style={styles.buttonText}>
-                {loading ? 'Mengirim...' : 'Konfirmasi'}
+                {loading ? 'Mendaftarkan...' : 'Daftar'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -175,28 +180,27 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   label: {
-    marginBottom: 10,
+    marginBottom: 8,
     fontSize: 16,
     color: '#fff',
   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    marginBottom: 20,
+    marginBottom: 16,
     padding: 12,
     borderRadius: 8,
     fontSize: 16,
     backgroundColor: '#fff',
   },
   button: {
-    backgroundColor: '#F3C623',  // Same background as the header color
+    backgroundColor: '#F3C623',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   buttonLoading: {
-    backgroundColor: '#777',  // Darken the color when loading
+    backgroundColor: '#777',
   },
   buttonText: {
     color: 'black',
@@ -205,4 +209,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LoginScreen;
+export default RegisterScreen;
