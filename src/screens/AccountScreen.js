@@ -129,7 +129,7 @@ const AkunScreen = () => {
           <Icon name="logout" size={20} color="#fff" />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
-        <Text style={styles.appVersion}>Versi Aplikasi v1.0.0</Text>
+        <Text style={styles.appVersion}>Versi Aplikasi v1.8</Text>
       </ScrollView>
 
       <Modal visible={modalVisible} animationType="fade" transparent>
